@@ -1,10 +1,12 @@
-import { BookOpen, ChartColumn, Home, Users } from "@tamagui/lucide-icons";
+import { BookOpen, ChartColumn, Home, Users, LogOut } from "@tamagui/lucide-icons";
 import { usePathname, useRouter } from "expo-router";
 import { Text, XStack, YStack } from "tamagui";
+import { useAuth } from "@/src/hooks/useAuth";
 
 export default function FooterMenu() {
   const router = useRouter();
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   const handleNavigation = (route: any) => {
     router.push(route);
@@ -17,6 +19,14 @@ export default function FooterMenu() {
   const students = pathname.includes("/alunos");
   const subjects = pathname.includes("/disciplinas");
   const grades = pathname.includes("/notas");
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } finally {
+      router.replace("/auth/sign-in");
+    }
+  };
 
   return (
     <XStack
@@ -93,6 +103,19 @@ export default function FooterMenu() {
         <Text color={grades ? "white" : "black"} fontWeight={600}>
           Notas
         </Text>
+      </YStack>
+
+      <YStack
+        flex={1}
+        items="center"
+        gap="$1.5"
+        p="$2.5"
+        rounded="$4"
+        onPress={handleLogout}
+        cursor="pointer"
+      >
+        <LogOut size="$1.5" color="black" />
+        <Text fontWeight={600}>Sair</Text>
       </YStack>
     </XStack>
   );

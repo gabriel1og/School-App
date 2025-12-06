@@ -29,11 +29,7 @@ export const authService = {
   async register(userData: RegisterData): Promise<AuthResponse> {
     try {
       const response = await api.post<AuthResponse>('/users', { user: userData });
-      
-      // Salvar token e dados do usuário
-      await tokenStorage.saveToken(response.data.token);
-      await tokenStorage.saveUser(response.data.user);
-      
+      // Alterei para NÃO autenticar automaticamente após cadastro. O app deve voltar para a tela de login.
       return response.data;
     } catch (error) {
       console.error('Erro no registro:', error);

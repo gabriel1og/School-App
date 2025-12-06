@@ -53,8 +53,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   async function signUp(userData: RegisterData): Promise<void> {
     try {
-      const response = await authService.register(userData);
-      setUser(response.user);
+      await authService.register(userData);
+      // Alterei para NÃO autenticar automaticamente após cadastro. O app deve voltar para a tela de login.
     } catch (error) {
       console.error('Erro no registro:', error);
       throw error;
