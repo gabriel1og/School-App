@@ -1,20 +1,103 @@
-# Welcome to your Expo app 👋
+# School App - Sistema de Gerenciamento Escolar 🎓
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo React Native completo para gerenciamento escolar com integração à **API Notas Online**.
 
-## Get started
+## ✨ Features
 
-1. Install dependencies
+- 🔐 Autenticação JWT completa
+- 🏫 Gerenciamento de Escolas
+- 👨‍🎓 Cadastro de Alunos
+- 📚 Gerenciamento de Disciplinas
+- 📊 Sistema de Notas e Médias
+- 👥 Gestão de Usuários (Admin/Professor)
 
-   ```bash
-   npm install
-   ```
+## 🚀 Quick Start
 
-2. Start the app
+### 1. Instalar dependências
 
-   ```bash
-   npx expo start
-   ```
+```bash
+npm install
+```
+
+### 2. Configurar API
+
+Copie o arquivo `.env.example` para `.env` e configure a URL:
+
+```bash
+cp .env.example .env
+```
+
+Edite o `.env`:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+# Para Android Emulator: http://10.0.2.2:3000
+```
+
+### 3. Iniciar o app
+
+```bash
+npx expo start
+```
+
+## 📦 Serviços da API
+
+Todos os serviços necessários estão **100% implementados e prontos** em `src/`:
+
+- ✅ **authService** - Login, registro, logout, perfil
+- ✅ **schoolService** - CRUD de escolas
+- ✅ **studentService** - CRUD de alunos  
+- ✅ **subjectService** - CRUD de disciplinas
+- ✅ **gradeService** - CRUD de notas + operações especiais
+- ✅ **userService** - CRUD de usuários
+
+## 🧪 Tela de Testes
+
+Uma tela completa de testes está disponível em `/test` para validar a integração:
+
+- ✅ Login com email e senha
+- ✅ Exibição de dados do usuário
+- ✅ Listagem de alunos
+- ✅ Logout
+
+**Acesse**: Navegue para `/test` no app ou veja [TELA_TESTES.md](TELA_TESTES.md)
+
+## 📚 Documentação
+
+| Arquivo | Descrição |
+|---------|-----------|
+| 📘 **[START.md](START.md)** | **⭐ COMECE AQUI** - Guia visual rápido |
+| 🧪 **[TELA_TESTES.md](TELA_TESTES.md)** | Como usar a tela de testes |
+| ⚙️ **[ENV.md](ENV.md)** | Configuração de variáveis de ambiente |
+| 📗 **[INSTALACAO.md](INSTALACAO.md)** | Guia de instalação passo a passo |
+| 📙 **[ESTRUTURA.md](ESTRUTURA.md)** | Visão geral da arquitetura |
+| 📕 **[src/README.md](src/README.md)** | Documentação completa dos serviços |
+| 📓 **[src/examples.ts](src/examples.ts)** | 15+ exemplos práticos de uso |
+| 📔 **[src/tests.ts](src/tests.ts)** | Suite de testes de validação |
+| 📒 **[COMANDOS.md](COMANDOS.md)** | Comandos úteis para desenvolvimento |
+| 📖 **[RESUMO.md](RESUMO.md)** | Resumo executivo do projeto |
+| 📋 **[CHANGELOG.md](CHANGELOG.md)** | Histórico de mudanças |
+
+## 🎯 Uso Rápido
+
+```typescript
+import { authService, studentService, useAuth } from '@/src';
+
+// Login
+await authService.login({ 
+  email: 'usuario@email.com', 
+  password: 'senha123' 
+});
+
+// Listar alunos
+const students = await studentService.getAll();
+
+// Usar hook de autenticação
+function MyComponent() {
+  const { user, signIn, signOut, isAuthenticated } = useAuth();
+  // ...
+}
+```
 
 In the output, you'll find options to open the app in a
 
