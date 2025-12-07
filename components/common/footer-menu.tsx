@@ -44,8 +44,11 @@ export default function FooterMenu() {
       items={"center"}
       px="$2"
       borderTopWidth={2}
-      borderTopColor="#f1f1f1"
+      borderTopColor="#8c8c8c1b"
       gap="$3"
+      style={{
+        boxShadow: "0 -10px 15px #8c8c8c1b",
+      }}
     >
       <YStack
         flex={1}
