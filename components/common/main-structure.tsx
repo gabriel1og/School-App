@@ -1,5 +1,6 @@
 import { YStack } from "tamagui";
 import FooterMenu from "./footer-menu";
+import HeaderMenu from "./header-menu";
 
 interface MainStructureProps {
   children: React.ReactNode;
@@ -8,7 +9,9 @@ interface MainStructureProps {
 export default function MainStructure({ children }: MainStructureProps) {
   return (
     <YStack flex={1} height="100%" position="relative">
-      <YStack bg="#bdbdd1" height="90%" p="$2">
+      <HeaderMenu />
+
+      <YStack bg="#bdbdd1" height="80%" p="$2">
         {children}
       </YStack>
 
