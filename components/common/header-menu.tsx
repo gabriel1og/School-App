@@ -1,10 +1,10 @@
+import logo from "@/assets/images/logo.png";
 import { authService } from "@/src/services";
 import { User } from "@/src/types/auth.types";
 import { User as UserIcon } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Avatar, Text, XStack } from "tamagui";
-import logo from "../../assets/images/logo.png";
 
 export default function HeaderMenu() {
   const router = useRouter();
