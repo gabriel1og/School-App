@@ -37,25 +37,28 @@ export default function HeaderMenu() {
       items={"center"}
       justify={"space-between"}
       px="$2"
-      borderTopWidth={2}
-      borderTopColor="#f1f1f1"
-      gap="$3"
+      bg="#003866"
+      borderBottomWidth={4}
+      borderBottomColor="#8c8c8c1b"
+      style={{
+        boxShadow: " #8c8c8c1b 0px -10px 15px",
+      }}
     >
-      <XStack items="center" gap="$3" p="$2" cursor="pointer">
-        <Avatar circular bg={"#ffffff"} size="$10">
+      <XStack
+        items="center"
+        p="$2"
+        cursor="pointer"
+        onPress={() => handleNavigation("/(app)/(tabs)/")}
+      >
+        <Avatar circular size="$10">
           <Avatar.Image src={logo} />
         </Avatar>
       </XStack>
 
-      <XStack
-        items="center"
-        p="$2"
-        onPress={() => handleNavigation("/(app)/(tabs)/my-account")}
-        cursor="pointer"
-      >
-        <Avatar circular bg={"#e0e0e0"} size="$6">
-          <UserIcon size="$1" />
-          <Text fontWeight={"600"} fontSize={"$5"}>
+      <XStack items="center" p="$3" cursor="pointer">
+        <Avatar circular bg={"#fff"} size="$5">
+          <UserIcon size="$1" color={"#003866"} />
+          <Text fontWeight={"600"} fontSize={"$4"} color={"#003866"}>
             {getUserInitials()}
           </Text>
         </Avatar>
