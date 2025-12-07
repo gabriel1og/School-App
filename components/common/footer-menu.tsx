@@ -1,7 +1,13 @@
-import { BookOpen, ChartColumn, Home, Users, LogOut } from "@tamagui/lucide-icons";
+import { useAuth } from "@/src/hooks/useAuth";
+import {
+  BookOpen,
+  ChartColumn,
+  Home,
+  LogOut,
+  Users,
+} from "@tamagui/lucide-icons";
 import { usePathname, useRouter } from "expo-router";
 import { Text, XStack, YStack } from "tamagui";
-import { useAuth } from "@/src/hooks/useAuth";
 
 export default function FooterMenu() {
   const router = useRouter();
@@ -34,7 +40,7 @@ export default function FooterMenu() {
       b="$0"
       l="$0"
       r="$0"
-      height="10%"
+      height="12.5%"
       items={"center"}
       px="$2"
       borderTopWidth={2}
