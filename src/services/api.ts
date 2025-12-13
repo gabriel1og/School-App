@@ -53,3 +53,12 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+// Instância pública (sem token) para endpoints que não exigem autenticação
+export const publicApi: AxiosInstance = axios.create({
+  baseURL: env.API_BASE_URL,
+  timeout: env.API_TIMEOUT,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});

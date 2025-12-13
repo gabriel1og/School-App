@@ -1,6 +1,7 @@
-import { BookOpen, ChartColumn, Users } from "@tamagui/lucide-icons";
+import { BookOpen, ChartColumn, Users, GraduationCap } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { Heading, Text, View, XStack, YStack } from "tamagui";
+import { useAuth } from "@/src/hooks/useAuth";
 
 interface QuickActionItem {
   id: string;
@@ -29,6 +30,14 @@ const quickActions: QuickActionItem[] = [
     route: "/(app)/(tabs)/disciplinas",
   },
   {
+    id: "teachers",
+    label: "Professores",
+    icon: GraduationCap,
+    iconColor: "white",
+    bgColor: "#8B5CF6",
+    route: "/(app)/(tabs)/professores",
+  },
+  {
     id: "grades",
     label: "Notas",
     icon: ChartColumn,
@@ -40,6 +49,7 @@ const quickActions: QuickActionItem[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleActionPress = (route: any) => {
     router.push(route);
@@ -54,7 +64,7 @@ export default function HomeScreen() {
       </XStack>
 
       <XStack flexWrap="wrap" gap="$3" justify="space-between">
-        {quickActions.map((action) => {
+        {(user?.user_type === 'admin' ? quickActions : quickActions.filter(a => a.id !== 'teachers')).map((action) => {
           const Icon = action.icon;
           return (
             <YStack

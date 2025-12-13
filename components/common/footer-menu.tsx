@@ -5,6 +5,7 @@ import {
   Home,
   LogOut,
   Users,
+  GraduationCap,
 } from "@tamagui/lucide-icons";
 import { usePathname, useRouter } from "expo-router";
 import { Text, XStack, YStack } from "tamagui";
@@ -12,7 +13,7 @@ import { Text, XStack, YStack } from "tamagui";
 export default function FooterMenu() {
   const router = useRouter();
   const pathname = usePathname();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const handleNavigation = (route: any) => {
     router.push(route);
@@ -24,6 +25,7 @@ export default function FooterMenu() {
     pathname.endsWith("/");
   const students = pathname.includes("/alunos");
   const subjects = pathname.includes("/disciplinas");
+  const teachers = pathname.includes("/professores");
   const grades = pathname.includes("/notas");
 
   const handleLogout = async () => {
@@ -65,6 +67,24 @@ export default function FooterMenu() {
           Home
         </Text>
       </YStack>
+
+      {user?.user_type === 'admin' && (
+        <YStack
+          flex={1}
+          items="center"
+          gap="$1.5"
+          background={teachers ? "#074b83" : "transparent"}
+          p="$2.5"
+          rounded="$4"
+          onPress={() => handleNavigation("/(app)/(tabs)/professores")}
+          cursor="pointer"
+        >
+          <GraduationCap size="$1.5" color={teachers ? "white" : "black"} />
+          <Text color={teachers ? "white" : "black"} fontWeight={600}>
+            Professores
+          </Text>
+        </YStack>
+      )}
 
       <YStack
         flex={1}

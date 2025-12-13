@@ -1,5 +1,5 @@
 import { CreateSchoolData, School, UpdateSchoolData } from '../types/school.types';
-import api from './api';
+import api, { publicApi } from './api';
 
 // Função auxiliar para normalizar o ID (MongoDB retorna _id)
 const normalizeSchool = (data: any): School => {
@@ -25,6 +25,15 @@ export const schoolService = {
    */
   async getAll(): Promise<School[]> {
     const response = await api.get<any[]>('/schools');
+    return response.data.map(normalizeSchool);
+  },
+
+  /**
+   * Listar escolas (público - não requer autenticação)
+   * GET /schools/public
+   */
+  async getPublic(): Promise<School[]> {
+    const response = await publicApi.get<any[]>('/schools/public');
     return response.data.map(normalizeSchool);
   },
 

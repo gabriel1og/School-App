@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { schoolService } from '@/src/services/school.service';
 import { useAuth } from '@/src/hooks/useAuth';
@@ -30,6 +30,7 @@ export default function SignUp() {
   const [phone, setPhone] = useState('');
   
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
+  const [isSchoolListOpen, setIsSchoolListOpen] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -101,13 +102,19 @@ export default function SignUp() {
       return next;
     });
     setSubmitError(null);
+    // Ao alternar o papel, garantir que a lista feche e a seleção seja limpa
+    setIsSchoolListOpen(false);
+    if (role !== 'teacher') {
+      setSelectedSchoolId('');
+    }
   }, [role]);
 
   async function loadSchools() {
     try {
       setLoadingSchools(true);
       setSchoolsMessage(null);
-      const data = await schoolService.getAll();
+      // Busca pública, sem necessidade de token
+      const data = await schoolService.getPublic();
       const list = data.map((s) => ({ id: s.id, name: s.name }));
       setSchools(list);
       if (!list.length) {
@@ -270,7 +277,15 @@ export default function SignUp() {
         <View style={{ marginBottom: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 10 }}>Escolha a Escola</Text>
           <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8 }}>
-            <TouchableOpacity disabled style={{ padding: 12, backgroundColor: '#f9fafb' }}>
+            <TouchableOpacity
+              onPress={() => {
+                if (!loadingSchools && !schoolsMessage && schools.length > 0) {
+                  setIsSchoolListOpen((o) => !o);
+                  Keyboard.dismiss();
+                }
+              }}
+              style={{ padding: 12, backgroundColor: '#f9fafb', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+            >
               <Text style={{ color: '#6b7280' }}>
                 {loadingSchools
                   ? 'Carregando escolas...'
@@ -278,22 +293,24 @@ export default function SignUp() {
                     ? schools.find((s) => s.id === selectedSchoolId)?.name
                     : (schoolsMessage ?? 'Selecione uma escola')}
               </Text>
+              <Text style={{ color: '#9ca3af' }}>{isSchoolListOpen ? '▲' : '▼'}</Text>
             </TouchableOpacity>
-            {!loadingSchools && !schoolsMessage && schools.length > 0 ? (
-              <View style={{ maxHeight: 200 }}>
+            {!loadingSchools && !schoolsMessage && schools.length > 0 && isSchoolListOpen ? (
+              <ScrollView style={{ maxHeight: 200 }}>
                 {schools.map((s) => (
                   <TouchableOpacity
                     key={s.id}
                     onPress={() => {
                       setSelectedSchoolId(s.id);
                       setTouched((p) => ({ ...p, selectedSchoolId: true }));
+                      setIsSchoolListOpen(false);
                     }}
                     style={{ padding: 12, backgroundColor: selectedSchoolId === s.id ? '#eef2ff' : 'white' }}
                   >
                     <Text>{s.name}</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             ) : null}
           </View>
           {touched.selectedSchoolId && errors.selectedSchoolId ? (
