@@ -1,11 +1,9 @@
-import logo from "@/assets/images/logo.png";
 import { authService } from "@/src/services";
 import type { User } from "@/src/types/user.types";
-import { User as UserIcon } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Avatar, Text, XStack } from "tamagui";
-
+import logo from "../../assets/images/logo.jpg";
 export default function HeaderMenu() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -33,16 +31,13 @@ export default function HeaderMenu() {
 
   return (
     <XStack
-      height="12.5%"
+      height="10%"
       items={"center"}
       justify={"space-between"}
       px="$2"
-      bg="#003866"
-      borderBottomWidth={4}
+      bg="#fff"
+      borderBottomWidth={2}
       borderBottomColor="#8c8c8c1b"
-      style={{
-        boxShadow: " #8c8c8c1b 0px -10px 15px",
-      }}
     >
       <XStack
         items="center"
@@ -50,18 +45,21 @@ export default function HeaderMenu() {
         cursor="pointer"
         onPress={() => handleNavigation("/(app)/(tabs)/")}
       >
-        <Avatar circular size="$10">
+        <Avatar circular size="$7">
           <Avatar.Image src={logo} />
         </Avatar>
       </XStack>
 
       <XStack items="center" p="$3" cursor="pointer">
-        <Avatar circular bg={"#fff"} size="$5">
-          <UserIcon size="$1" color={"#003866"} />
-          <Text fontWeight={"600"} fontSize={"$4"} color={"#003866"}>
-            {getUserInitials()}
-          </Text>
-        </Avatar>
+        <Text fontWeight={"600"} fontSize={"$5"} color={"#003866"}>
+          Seja bem-vindo,
+        </Text>
+        <Text fontWeight={"700"} fontSize={"$5"} color={"#003866"}>
+          {user?.name ? ` ${user.name}` : " Caro Usuário"}
+        </Text>
+        <Text pl="$0.5" fontWeight={"700"} fontSize={"$5"} color={"#003866"}>
+          !
+        </Text>
       </XStack>
     </XStack>
   );
