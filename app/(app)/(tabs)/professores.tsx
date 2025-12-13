@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { teacherService } from '@/src/services/teacher.service';
 import type { Teacher } from '@/src/types/teacher.types';
 import { useAuth } from '@/src/hooks/useAuth';
 import { Redirect } from 'expo-router';
+import { Alert } from 'react-native';
 import {
   Button,
   Input,
@@ -19,6 +20,7 @@ export default function ProfessoresScreen() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
 
   // form
   const [name, setName] = useState('');
@@ -41,16 +43,19 @@ export default function ProfessoresScreen() {
     }
   };
 
+  const isEditing = useMemo(() => !!editingTeacher, [editingTeacher]);
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = 'Nome é obrigatório';
     if (!email.trim()) newErrors.email = 'E-mail é obrigatório';
-    if (!password.trim()) newErrors.password = 'Senha é obrigatória';
-    if (!passwordConfirmation.trim()) newErrors.passwordConfirmation = 'Confirmação de senha é obrigatória';
-    if (password.trim() && passwordConfirmation.trim() && password !== passwordConfirmation) {
+    // senha obrigatória apenas no cadastro; na edição é opcional
+    if (!isEditing && !password.trim()) newErrors.password = 'Senha é obrigatória';
+    if (!isEditing && !passwordConfirmation.trim()) newErrors.passwordConfirmation = 'Confirmação de senha é obrigatória';
+    if (!isEditing && password.trim() && passwordConfirmation.trim() && password !== passwordConfirmation) {
       newErrors.passwordConfirmation = 'Senhas não coincidem';
     }
-    if (!address.trim()) newErrors.address = 'Endereço é obrigatório';
+    if (!isEditing && !address.trim()) newErrors.address = 'Endereço é obrigatório';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,14 +65,27 @@ export default function ProfessoresScreen() {
 
     try {
       setSaving(true);
-      await teacherService.create({
-        name,
-        email,
-        password,
-        password_confirmation: passwordConfirmation,
-        school_id: user?.school_id || '',
-        address: address,
-      });
+      if (isEditing && editingTeacher) {
+        const payload: any = {
+          name: name.trim() || undefined,
+          email: email.trim() || undefined,
+          address: address.trim() || undefined,
+        };
+        if (password.trim()) {
+          payload.password = password;
+          payload.password_confirmation = passwordConfirmation;
+        }
+        await teacherService.update(editingTeacher.id!, payload);
+      } else {
+        await teacherService.create({
+          name,
+          email,
+          password,
+          password_confirmation: passwordConfirmation,
+          school_id: user?.school_id || '',
+          address: address,
+        });
+      }
       setOpen(false);
       // reset
       setName('');
@@ -75,13 +93,59 @@ export default function ProfessoresScreen() {
       setPassword('');
       setPasswordConfirmation('');
       setAddress('');
+      setEditingTeacher(null);
       setErrors({});
       await loadTeachers();
     } catch (e: any) {
-      console.error('Erro ao cadastrar professor:', e);
+      console.error(isEditing ? 'Erro ao atualizar professor:' : 'Erro ao cadastrar professor:', e);
     } finally {
       setSaving(false);
     }
+  };
+
+  const startCreate = () => {
+    setEditingTeacher(null);
+    setName('');
+    setEmail('');
+    setPassword('');
+    setPasswordConfirmation('');
+    setAddress('');
+    setErrors({});
+    setOpen(true);
+  };
+
+  const startEdit = (t: Teacher) => {
+    setEditingTeacher(t);
+    setName(t.name || '');
+    setEmail(t.email || '');
+    setPassword('');
+    setPasswordConfirmation('');
+    // @ts-ignore - alguns backends usam address no root
+    setAddress((t as any).address || '');
+    setErrors({});
+    setOpen(true);
+  };
+
+  const confirmDelete = (t: Teacher) => {
+    Alert.alert(
+      'Excluir professor',
+      `Tem certeza que deseja excluir ${t.name}? Esta ação não pode ser desfeita.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await teacherService.delete(t.id!);
+              await loadTeachers();
+            } catch (e) {
+              console.error('Erro ao excluir professor:', e);
+            }
+          }
+        }
+      ]
+    );
   };
 
   // Guard de rota: apenas admin pode acessar
@@ -93,7 +157,7 @@ export default function ProfessoresScreen() {
     <View flex={1} background="white" p="$4">
       <XStack justify="space-between" items="center" mb="$4">
         <Text fontSize="$8" fontWeight="bold" color="#0960a7">Professores</Text>
-        <Button onPress={() => setOpen(true)}>Novo</Button>
+        <Button onPress={startCreate}>Novo</Button>
       </XStack>
 
       <ScrollView>
@@ -113,6 +177,10 @@ export default function ProfessoresScreen() {
             >
               <Text fontSize="$6" fontWeight="700" color="#111827">{t.name}</Text>
               <Text color="#6B7280">{t.email}</Text>
+              <XStack gap="$2" mt="$2">
+                <Button size="$2" onPress={() => startEdit(t)}>Editar</Button>
+                <Button size="$2" theme="red" onPress={() => confirmDelete(t)}>Excluir</Button>
+              </XStack>
             </YStack>
           ))}
           {teachers.length === 0 && (
@@ -124,7 +192,7 @@ export default function ProfessoresScreen() {
       <Sheet modal open={open} onOpenChange={setOpen} snapPoints={[85]}>
         <Sheet.Frame p="$4" background="#fff">
           <YStack gap="$3">
-            <Text fontSize="$7" fontWeight="700">Cadastro de Professor</Text>
+            <Text fontSize="$7" fontWeight="700">{isEditing ? 'Editar Professor' : 'Cadastro de Professor'}</Text>
             <YStack>
               <Input
                 placeholder="Nome"
