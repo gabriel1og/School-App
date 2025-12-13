@@ -21,10 +21,10 @@ export const teacherService = {
 
   /**
    * Listar professores (apenas admin)
-   * GET /teachers
+   * GET /users?user_type=teacher
    */
   async getAll(): Promise<Teacher[]> {
-    const response = await api.get<any[]>('/teachers');
+    const response = await api.get<any[]>('/users?user_type=teacher');
     return response.data.map(normalizeTeacher);
   },
 

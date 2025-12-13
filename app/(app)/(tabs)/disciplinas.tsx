@@ -20,13 +20,26 @@ export default function DisciplinasScreen() {
   // Campos do formulário
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [numberOfGrades, setNumberOfGrades] = useState("1");
-  const [passingAverage, setPassingAverage] = useState("60");
-  const [recoveryAverage, setRecoveryAverage] = useState("50");
+  const [numberOfGrades, setNumberOfGrades] = useState("");
+  const [passingAverage, setPassingAverage] = useState("");
+  const [recoveryAverage, setRecoveryAverage] = useState("");
   const [teacherId, setTeacherId] = useState("");
 
   // editar
   const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const resetForm = () => {
+    setEditingSubjectId(null);
+    setName("");
+    setCode("");
+    setNumberOfGrades("");
+    setPassingAverage("");
+    setRecoveryAverage("");
+    setTeacherId("");
+    setErrors({});
+  };
+
   const handleEdit = (subj: Subject) => {
     setEditingSubjectId(subj.id);
     setName(subj.name);
@@ -35,6 +48,7 @@ export default function DisciplinasScreen() {
     setPassingAverage(String(subj.passing_average));
     setRecoveryAverage(String(subj.recovery_average));
     setTeacherId(subj.teacher_id);
+    setErrors({});
     setOpen(true);
   };
 
@@ -67,8 +81,17 @@ export default function DisciplinasScreen() {
   };
 
   const saveSubject = async () => {
-    if (!name.trim() || !code.trim() || !teacherId.trim()) {
-      console.warn("Preencha os campos obrigatórios!");
+    // validação
+    const newErrors: Record<string, string> = {};
+    if (!name.trim()) newErrors.name = "Nome é obrigatório";
+    if (!code.trim()) newErrors.code = "Código é obrigatório";
+    if (!numberOfGrades.trim()) newErrors.numberOfGrades = "Quantidade de notas é obrigatória";
+    if (!passingAverage.trim()) newErrors.passingAverage = "Média para passar é obrigatória";
+    if (!recoveryAverage.trim()) newErrors.recoveryAverage = "Média de recuperação é obrigatória";
+    if (!teacherId.trim()) newErrors.teacherId = "Professor é obrigatório";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -93,15 +116,7 @@ export default function DisciplinasScreen() {
       }
 
       setOpen(false);
-      setEditingSubjectId(null);
-
-      // Resetando campos
-      setName("");
-      setCode("");
-      setNumberOfGrades("");
-      setPassingAverage("");
-      setRecoveryAverage("");
-      setTeacherId("");
+      resetForm();
 
       await loadSubjects();
     } catch (error: any) {
@@ -157,7 +172,10 @@ export default function DisciplinasScreen() {
 
         {/* Botão */}
         <Button
-          onPress={() => setOpen(true)}
+          onPress={() => {
+            resetForm();
+            setOpen(true);
+          }}
           backgroundColor="#0960a7"
           color="white"
           borderRadius="$4"
@@ -205,7 +223,13 @@ export default function DisciplinasScreen() {
       <Sheet
         forceRemoveScrollEnabled
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(val) => {
+          setOpen(val);
+          if (!val) {
+            // Ao fechar, limpar formulário e erros
+            resetForm();
+          }
+        }}
         snapPoints={[100]}
         animation="medium"
       >
@@ -213,39 +237,57 @@ export default function DisciplinasScreen() {
         <Sheet.Frame p="$4" backgroundColor="white">
           <YStack gap="$3">
             <Text fontSize="$7" fontWeight="bold">
-              Nova Disciplina
+              {editingSubjectId ? 'Editar Disciplina' : 'Nova Disciplina'}
             </Text>
 
-            <Input placeholder="Nome" value={name} onChangeText={setName} />
+            <Input placeholder="Nome" value={name} onChangeText={(v) => { setName(v); if (errors.name) setErrors(prev => ({...prev, name: ''})); }} />
+            {errors.name ? (
+              <Text color="#b91c1c" fontSize="$3">{errors.name}</Text>
+            ) : null}
 
-            <Input placeholder="Código" value={code} onChangeText={setCode} />
+            <Input placeholder="Código" value={code} onChangeText={(v) => { setCode(v); if (errors.code) setErrors(prev => ({...prev, code: ''})); }} />
+            {errors.code ? (
+              <Text color="#b91c1c" fontSize="$3">{errors.code}</Text>
+            ) : null}
 
             <Input
               placeholder="Quantidade de notas"
               keyboardType="numeric"
               value={numberOfGrades}
-              onChangeText={setNumberOfGrades}
+              onChangeText={(v) => { setNumberOfGrades(v); if (errors.numberOfGrades) setErrors(prev => ({...prev, numberOfGrades: ''})); }}
             />
+            {errors.numberOfGrades ? (
+              <Text color="#b91c1c" fontSize="$3">{errors.numberOfGrades}</Text>
+            ) : null}
 
             <Input
               placeholder="Média para passar"
               keyboardType="numeric"
               value={passingAverage}
-              onChangeText={setPassingAverage}
+              onChangeText={(v) => { setPassingAverage(v); if (errors.passingAverage) setErrors(prev => ({...prev, passingAverage: ''})); }}
             />
+            {errors.passingAverage ? (
+              <Text color="#b91c1c" fontSize="$3">{errors.passingAverage}</Text>
+            ) : null}
 
             <Input
               placeholder="Média de recuperação"
               keyboardType="numeric"
               value={recoveryAverage}
-              onChangeText={setRecoveryAverage}
+              onChangeText={(v) => { setRecoveryAverage(v); if (errors.recoveryAverage) setErrors(prev => ({...prev, recoveryAverage: ''})); }}
             />
+            {errors.recoveryAverage ? (
+              <Text color="#b91c1c" fontSize="$3">{errors.recoveryAverage}</Text>
+            ) : null}
 
             <Input
               placeholder="ID do professor"
               value={teacherId}
-              onChangeText={setTeacherId}
+              onChangeText={(v) => { setTeacherId(v); if (errors.teacherId) setErrors(prev => ({...prev, teacherId: ''})); }}
             />
+            {errors.teacherId ? (
+              <Text color="#b91c1c" fontSize="$3">{errors.teacherId}</Text>
+            ) : null}
 
             <XStack justifyContent="flex-end" gap="$3" mt="$2">
               <Button backgroundColor="#ccc" onPress={() => setOpen(false)}>
