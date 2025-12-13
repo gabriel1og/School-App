@@ -1,6 +1,10 @@
 import { subjectService } from "@/src/services/subject.service";
+import { teacherService } from "@/src/services/teacher.service";
 import { CreateSubjectData, Subject } from "@/src/types/subject.types";
+import type { Teacher } from "@/src/types/teacher.types";
+import { useAuth } from "@/src/hooks/useAuth";
 import { useEffect, useState } from "react";
+import { TouchableOpacity } from "react-native";
 import {
   Button,
   Input,
@@ -13,9 +17,12 @@ import {
 } from "tamagui";
 
 export default function DisciplinasScreen() {
+  const { user } = useAuth();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const isAdmin = user?.user_type === 'admin';
+  const isTeacher = user?.user_type === 'teacher';
 
   // Campos do formulário
   const [name, setName] = useState("");
@@ -24,6 +31,12 @@ export default function DisciplinasScreen() {
   const [passingAverage, setPassingAverage] = useState("");
   const [recoveryAverage, setRecoveryAverage] = useState("");
   const [teacherId, setTeacherId] = useState("");
+
+  // Lista de professores (para admin)
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [teachersMessage, setTeachersMessage] = useState<string | null>(null);
+  const [isTeacherListOpen, setIsTeacherListOpen] = useState(false);
 
   // editar
   const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
@@ -37,6 +50,7 @@ export default function DisciplinasScreen() {
     setPassingAverage("");
     setRecoveryAverage("");
     setTeacherId("");
+    setIsTeacherListOpen(false);
     setErrors({});
   };
 
@@ -71,6 +85,27 @@ export default function DisciplinasScreen() {
     loadSubjects();
   }, []);
 
+  // Carregar professores quando admin abrir o modal
+  useEffect(() => {
+    const loadTeachers = async () => {
+      try {
+        setLoadingTeachers(true);
+        setTeachersMessage(null);
+        const data = await teacherService.getAll();
+        setTeachers(data);
+        setTeachersMessage(data.length === 0 ? 'Nenhum professor encontrado.' : null);
+      } catch (e) {
+        console.error('Erro ao carregar professores:', e);
+        setTeachersMessage('Não foi possível carregar professores.');
+      } finally {
+        setLoadingTeachers(false);
+      }
+    };
+    if (open && isAdmin) {
+      loadTeachers();
+    }
+  }, [open, isAdmin]);
+
   const loadSubjects = async () => {
     try {
       const data = await subjectService.getAll();
@@ -88,12 +123,16 @@ export default function DisciplinasScreen() {
     if (!numberOfGrades.trim()) newErrors.numberOfGrades = "Quantidade de notas é obrigatória";
     if (!passingAverage.trim()) newErrors.passingAverage = "Média para passar é obrigatória";
     if (!recoveryAverage.trim()) newErrors.recoveryAverage = "Média de recuperação é obrigatória";
-    if (!teacherId.trim()) newErrors.teacherId = "Professor é obrigatório";
+    // Se for admin, precisa selecionar um professor
+    if (isAdmin && !teacherId.trim()) newErrors.teacherId = "Professor é obrigatório";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+
+    // teacher_id: se for professor logado, usa o próprio id; se admin, usa o selecionado
+    const teacherIdForPayload = isTeacher ? (user?.id || "") : teacherId;
 
     const payload: CreateSubjectData = {
       name,
@@ -101,7 +140,7 @@ export default function DisciplinasScreen() {
       number_of_grades: Number(numberOfGrades),
       passing_average: Number(passingAverage),
       recovery_average: Number(recoveryAverage),
-      teacher_id: teacherId,
+      teacher_id: teacherIdForPayload,
     };
 
     try {
@@ -161,83 +200,53 @@ export default function DisciplinasScreen() {
 
   return (
     <View flex={1} background="white" p="$4">
-      <YStack gap="$4">
-        {/* Título */}
-        <Text fontSize="$8" fontWeight="bold" color="#0960a7">
-          Disciplinas
-        </Text>
-        <Text fontSize="$5" color="#666">
-          Lista de disciplinas disponíveis
-        </Text>
+      <XStack justify="space-between" items="center" mb="$4">
+        <Text fontSize="$8" fontWeight="bold" color="#0960a7">Disciplinas</Text>
+        <Button onPress={() => { resetForm(); setOpen(true); }}>Nova</Button>
+      </XStack>
 
-        {/* Botão */}
-        <Button
-          onPress={() => {
-            resetForm();
-            setOpen(true);
-          }}
-          backgroundColor="#0960a7"
-          color="white"
-          borderRadius="$4"
-        >
-          + Nova disciplina
-        </Button>
-
-        {/* Lista */}
-        <ScrollView>
+      {/* Lista */}
+      <ScrollView>
+        <YStack gap="$3">
           {subjects.map((subj) => (
             <YStack
               key={subj.id}
               p="$3"
-              mb="$2"
-              backgroundColor="#f3f3f3"
-              borderRadius="$3"
+              background="#fff"
+              borderWidth={1}
+              borderColor="#F3F4F6"
+              style={{ borderRadius: 12 }}
+              shadowColor="#000"
+              shadowOffset={{ width: 0, height: 2 }}
+              shadowOpacity={0.05}
+              shadowRadius={8}
             >
-              <Text fontSize="$6" fontWeight="bold">{subj.name}</Text>
-              <Text color="#666">{subj.code}</Text>
-              <Text color="#555">
-                Notas: {subj.number_of_grades} | Média: {subj.passing_average}
-              </Text>
+              <Text fontSize="$6" fontWeight="700" color="#111827">{subj.name}</Text>
+              <Text color="#6B7280">{subj.code}</Text>
+              <Text color="#6B7280">Notas: {subj.number_of_grades} · Média: {subj.passing_average}</Text>
 
               <XStack mt="$2" gap="$2">
-                <Button
-                  backgroundColor="#f59e0b"
-                  onPress={() => handleEdit(subj)}
-                >
+                <Button theme="alt1" onPress={() => handleEdit(subj)}>
                   Editar
                 </Button>
-
-                <Button
-                  backgroundColor="#dc2626"
-                  onPress={() => handleDelete(subj.id)}
-                >
+                <Button theme="red" onPress={() => handleDelete(subj.id)}>
                   Deletar
                 </Button>
               </XStack>
             </YStack>
           ))}
-        </ScrollView>
-      </YStack>
+          {subjects.length === 0 && (
+            <Text color="#6B7280">Nenhuma disciplina encontrada.</Text>
+          )}
+        </YStack>
+      </ScrollView>
 
       {/* Modal */}
-      <Sheet
-        forceRemoveScrollEnabled
-        open={open}
-        onOpenChange={(val) => {
-          setOpen(val);
-          if (!val) {
-            // Ao fechar, limpar formulário e erros
-            resetForm();
-          }
-        }}
-        snapPoints={[100]}
-        animation="medium"
-      >
-        <Sheet.Overlay disableTap/>
-        <Sheet.Frame p="$4" backgroundColor="white">
+      <Sheet modal open={open} onOpenChange={(val) => { setOpen(val); if (!val) resetForm(); }} snapPoints={[85]}>
+        <Sheet.Frame p="$4" background="#fff">
           <YStack gap="$3">
-            <Text fontSize="$7" fontWeight="bold">
-              {editingSubjectId ? 'Editar Disciplina' : 'Nova Disciplina'}
+            <Text fontSize="$7" fontWeight="700">
+              {editingSubjectId ? 'Editar Disciplina' : 'Cadastro de Disciplina'}
             </Text>
 
             <Input placeholder="Nome" value={name} onChangeText={(v) => { setName(v); if (errors.name) setErrors(prev => ({...prev, name: ''})); }} />
@@ -280,22 +289,58 @@ export default function DisciplinasScreen() {
               <Text color="#b91c1c" fontSize="$3">{errors.recoveryAverage}</Text>
             ) : null}
 
-            <Input
-              placeholder="ID do professor"
-              value={teacherId}
-              onChangeText={(v) => { setTeacherId(v); if (errors.teacherId) setErrors(prev => ({...prev, teacherId: ''})); }}
-            />
-            {errors.teacherId ? (
-              <Text color="#b91c1c" fontSize="$3">{errors.teacherId}</Text>
-            ) : null}
+            {/* Seleção de professor apenas para ADMIN (Dropdown) */}
+            {isAdmin && (
+              <YStack gap="$2">
+                <Text fontWeight="700">Professor:</Text>
+                <YStack borderWidth={1} borderColor="#E5E7EB" borderRadius={8}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!loadingTeachers && !teachersMessage && teachers.length > 0) {
+                        setIsTeacherListOpen((o) => !o);
+                      }
+                    }}
+                    style={{ padding: 12, backgroundColor: '#f9fafb', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <Text color="#6b7280">
+                      {loadingTeachers
+                        ? 'Carregando professores...'
+                        : (teacherId
+                            ? (teachers.find((t) => t.id === teacherId)?.name || 'Selecione um professor')
+                            : (teachersMessage ?? 'Selecione um professor'))}
+                    </Text>
+                    <Text color="#9ca3af">{isTeacherListOpen ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
+                  {!loadingTeachers && !teachersMessage && teachers.length > 0 && isTeacherListOpen ? (
+                    <ScrollView style={{ maxHeight: 200 }}>
+                      {teachers.map((t) => (
+                        <TouchableOpacity
+                          key={t.id}
+                          onPress={() => {
+                            setTeacherId(t.id);
+                            if (errors.teacherId) setErrors((prev) => ({ ...prev, teacherId: '' }));
+                            setIsTeacherListOpen(false);
+                          }}
+                          style={{ padding: 12, backgroundColor: teacherId === t.id ? '#eef2ff' : 'white' }}
+                        >
+                          <Text>{t.name}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  ) : null}
+                </YStack>
+                {errors.teacherId ? (
+                  <Text color="#b91c1c" fontSize="$3">{errors.teacherId}</Text>
+                ) : null}
+              </YStack>
+            )}
 
-            <XStack justifyContent="flex-end" gap="$3" mt="$2">
-              <Button backgroundColor="#ccc" onPress={() => setOpen(false)}>
+            <XStack gap="$2" mt="$2">
+              <Button flex={1} theme="alt1" onPress={() => setOpen(false)} disabled={loading}>
                 Cancelar
               </Button>
-
-              <Button backgroundColor="#0960a7" color="white" onPress={saveSubject}>
-                Salvar
+              <Button flex={1} onPress={saveSubject} disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar'}
               </Button>
             </XStack>
           </YStack>
