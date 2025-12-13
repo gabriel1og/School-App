@@ -2,13 +2,13 @@ import { useAuth } from "@/src/hooks/useAuth";
 import {
   BookOpen,
   ChartColumn,
+  GraduationCap,
   Home,
   LogOut,
   Users,
-  GraduationCap,
 } from "@tamagui/lucide-icons";
 import { usePathname, useRouter } from "expo-router";
-import { Text, XStack, YStack } from "tamagui";
+import { XStack, YStack } from "tamagui";
 
 export default function FooterMenu() {
   const router = useRouter();
@@ -42,15 +42,12 @@ export default function FooterMenu() {
       b="$0"
       l="$0"
       r="$0"
-      height="12.5%"
+      height="10%"
       items={"center"}
-      px="$2"
+      px="$4"
       borderTopWidth={2}
       borderTopColor="#8c8c8c1b"
-      gap="$3"
-      style={{
-        boxShadow: "0 -10px 15px #8c8c8c1b",
-      }}
+      gap="$4"
     >
       <YStack
         flex={1}
@@ -63,12 +60,12 @@ export default function FooterMenu() {
         cursor="pointer"
       >
         <Home size="$1.5" color={home ? "white" : "black"} />
-        <Text color={home ? "white" : "black"} fontWeight={600}>
+        {/* <Text color={home ? "white" : "black"} fontWeight={600}>
           Home
-        </Text>
+        </Text> */}
       </YStack>
 
-      {user?.user_type === 'admin' && (
+      {user?.user_type === "admin" && (
         <YStack
           flex={1}
           items="center"
@@ -80,9 +77,9 @@ export default function FooterMenu() {
           cursor="pointer"
         >
           <GraduationCap size="$1.5" color={teachers ? "white" : "black"} />
-          <Text color={teachers ? "white" : "black"} fontWeight={600}>
+          {/* <Text color={teachers ? "white" : "black"} fontWeight={600}>
             Professores
-          </Text>
+          </Text> */}
         </YStack>
       )}
 
@@ -97,9 +94,9 @@ export default function FooterMenu() {
         cursor="pointer"
       >
         <Users size="$1.5" color={students ? "white" : "black"} />
-        <Text color={students ? "white" : "black"} fontWeight={600}>
+        {/* <Text color={students ? "white" : "black"} fontWeight={600}>
           Alunos
-        </Text>
+        </Text> */}
       </YStack>
 
       <YStack
@@ -113,9 +110,9 @@ export default function FooterMenu() {
         cursor="pointer"
       >
         <BookOpen size="$1.5" color={subjects ? "white" : "black"} />
-        <Text color={subjects ? "white" : "black"} fontWeight={600}>
+        {/* <Text color={subjects ? "white" : "black"} fontWeight={600}>
           Disciplinas
-        </Text>
+        </Text> */}
       </YStack>
 
       <YStack
@@ -129,9 +126,9 @@ export default function FooterMenu() {
         cursor="pointer"
       >
         <ChartColumn size="$1.5" color={grades ? "white" : "black"} />
-        <Text color={grades ? "white" : "black"} fontWeight={600}>
+        {/* <Text color={grades ? "white" : "black"} fontWeight={600}>
           Notas
-        </Text>
+        </Text> */}
       </YStack>
 
       <YStack
@@ -144,7 +141,7 @@ export default function FooterMenu() {
         cursor="pointer"
       >
         <LogOut size="$1.5" color="black" />
-        <Text fontWeight={600}>Sair</Text>
+        {/* <Text fontWeight={600}>Sair</Text> */}
       </YStack>
     </XStack>
   );
