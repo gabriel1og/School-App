@@ -11,7 +11,7 @@ export default function MainStructure({ children }: MainStructureProps) {
     <YStack flex={1} height="100%" position="relative">
       <HeaderMenu />
 
-      <YStack bg="#ffffff" height="75%" p="$2">
+      <YStack bg="#ffffff" height="80%" p="$4">
         {children}
       </YStack>
 
