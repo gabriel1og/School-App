@@ -1,6 +1,6 @@
 import logo from "@/assets/images/logo.png";
 import { authService } from "@/src/services";
-import { User } from "@/src/types/auth.types";
+import type { User } from "@/src/types/user.types";
 import { User as UserIcon } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";

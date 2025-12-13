@@ -226,7 +226,7 @@ export default function DisciplinasScreen() {
               <Text color="#6B7280">Notas: {subj.number_of_grades} · Média: {subj.passing_average}</Text>
 
               <XStack mt="$2" gap="$2">
-                <Button theme="alt1" onPress={() => handleEdit(subj)}>
+                <Button onPress={() => handleEdit(subj)}>
                   Editar
                 </Button>
                 <Button theme="red" onPress={() => handleDelete(subj.id)}>
@@ -242,7 +242,7 @@ export default function DisciplinasScreen() {
       </ScrollView>
 
       {/* Modal */}
-      <Sheet modal open={open} onOpenChange={(val) => { setOpen(val); if (!val) resetForm(); }} snapPoints={[85]}>
+      <Sheet modal open={open} onOpenChange={(val: boolean) => { setOpen(val); if (!val) resetForm(); }} snapPoints={[85]}>
         <Sheet.Frame p="$4" background="#fff">
           <YStack gap="$3">
             <Text fontSize="$7" fontWeight="700">
@@ -293,7 +293,7 @@ export default function DisciplinasScreen() {
             {isAdmin && (
               <YStack gap="$2">
                 <Text fontWeight="700">Professor:</Text>
-                <YStack borderWidth={1} borderColor="#E5E7EB" borderRadius={8}>
+                <YStack borderWidth={1} borderColor="#E5E7EB" style={{ borderRadius: 8 }}>
                   <TouchableOpacity
                     onPress={() => {
                       if (!loadingTeachers && !teachersMessage && teachers.length > 0) {
@@ -336,7 +336,7 @@ export default function DisciplinasScreen() {
             )}
 
             <XStack gap="$2" mt="$2">
-              <Button flex={1} theme="alt1" onPress={() => setOpen(false)} disabled={loading}>
+              <Button flex={1} onPress={() => setOpen(false)} disabled={loading}>
                 Cancelar
               </Button>
               <Button flex={1} onPress={saveSubject} disabled={loading}>
@@ -351,17 +351,12 @@ export default function DisciplinasScreen() {
       {alertVisible && (
         <View
           position="absolute"
-          top={40}
-          left={20}
-          right={20}
-          padding="$4"
-          backgroundColor="#fee2e2"
-          borderRadius="$4"
+          p="$4"
+          background="#fee2e2"
           borderWidth={1}
           borderColor="#fca5a5"
-          zIndex={999999}
-          elevation={20}
           pointerEvents="auto"
+          style={{ top: 40, left: 20, right: 20, borderRadius: 8, zIndex: 999999, elevation: 20 }}
         >
           <Text fontSize="$6" fontWeight="bold" color="#b91c1c">
             {alertTitle}
@@ -371,7 +366,7 @@ export default function DisciplinasScreen() {
             {alertMessage}
           </Text>
 
-          <XStack justifyContent="flex-end" mt="$3">
+          <XStack justify="flex-end" mt="$3">
             {alertButtons.map((btn, index) => (
               <Button
                 key={index}
@@ -380,7 +375,7 @@ export default function DisciplinasScreen() {
                   setAlertVisible(false);
                 }}
                 ml="$2"
-                backgroundColor="#b91c1c"
+                background="#b91c1c"
                 color="white"
               >
                 {btn.text}

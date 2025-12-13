@@ -335,9 +335,9 @@ export default function NotasScreen() {
 
       {item.grades.map((grade, gradeIndex) => (
         <View key={grade.id} style={styles.subjectContainer}>
-          <XStack justifyContent="space-between" alignItems="center" mb="$2">
+          <XStack justify="space-between" items="center" mb="$2">
             <Text style={styles.subjectName}>{getSubjectName(grade.subject_id)}</Text>
-            <XStack gap="$2" alignItems="center">
+            <XStack gap="$2" items="center">
               <TouchableOpacity
                 onPress={() => openEditAllScoresModal(grade)}
                 style={styles.editButton}
@@ -355,7 +355,7 @@ export default function NotasScreen() {
             </XStack>
           </XStack>
 
-          <XStack gap="$2" flexWrap="wrap" alignItems="center">
+          <XStack gap="$2" flexWrap="wrap" items="center">
             {grade.scores.map((score, index) => (
               <TouchableOpacity
                 key={index}
@@ -373,14 +373,14 @@ export default function NotasScreen() {
   );
 
   return (
-    <View flex={1} backgroundColor="$background">
+    <View flex={1} background="$background">
       <View style={styles.header}>
         <Text fontSize="$8" fontWeight="bold" color="#0960a7">
           Notas
         </Text>
         <Button
           size="$4"
-          backgroundColor="#0960a7"
+          background="#0960a7"
           onPress={() => setModalVisible(true)}
           disabled={loading}
         >
@@ -395,7 +395,7 @@ export default function NotasScreen() {
           <XStack gap="$2" p="$2">
             <Button
               size="$3"
-              backgroundColor={filterType === "all" ? "#0960a7" : "#E0E0E0"}
+              background={filterType === "all" ? "#0960a7" : "#E0E0E0"}
               onPress={() => {
                 setFilterType("all");
                 setSelectedStudentId("");
@@ -406,14 +406,14 @@ export default function NotasScreen() {
             </Button>
             <Button
               size="$3"
-              backgroundColor={filterType === "student" ? "#0960a7" : "#E0E0E0"}
+              background={filterType === "student" ? "#0960a7" : "#E0E0E0"}
               onPress={() => setFilterType("student")}
             >
               <Text color={filterType === "student" ? "white" : "black"}>Por Aluno</Text>
             </Button>
             <Button
               size="$3"
-              backgroundColor={filterType === "subject" ? "#0960a7" : "#E0E0E0"}
+              background={filterType === "subject" ? "#0960a7" : "#E0E0E0"}
               onPress={() => setFilterType("subject")}
             >
               <Text color={filterType === "subject" ? "white" : "black"}>
@@ -432,7 +432,7 @@ export default function NotasScreen() {
                   <Button
                     key={student.id}
                     size="$3"
-                    backgroundColor={
+                    background={
                       selectedStudentId === student.id ? "#4CAF50" : "#F5F5F5"
                     }
                     onPress={() => setSelectedStudentId(student.id)}
@@ -459,7 +459,7 @@ export default function NotasScreen() {
                   <Button
                     key={subject.id}
                     size="$3"
-                    backgroundColor={
+                    background={
                       selectedSubjectId === subject.id ? "#4CAF50" : "#F5F5F5"
                     }
                     onPress={() => setSelectedSubjectId(subject.id)}
@@ -522,7 +522,7 @@ export default function NotasScreen() {
                     <Button
                       key={student.id}
                       size="$3"
-                      backgroundColor={
+                      background={
                         formData.student_id === student.id ? "#0960a7" : "#F5F5F5"
                       }
                       onPress={() =>
@@ -547,7 +547,7 @@ export default function NotasScreen() {
                     <Button
                       key={subject.id}
                       size="$3"
-                      backgroundColor={
+                      background={
                         formData.subject_id === subject.id ? "#0960a7" : "#F5F5F5"
                       }
                       onPress={() =>
@@ -576,7 +576,7 @@ export default function NotasScreen() {
                 />
                 <Button
                   size="$3"
-                  backgroundColor="#4CAF50"
+                  background="#4CAF50"
                   onPress={handleAddScore}
                 >
                   <Text color="white">+</Text>
@@ -602,7 +602,7 @@ export default function NotasScreen() {
                 <Button
                   flex={1}
                   size="$4"
-                  backgroundColor="#E0E0E0"
+                  background="#E0E0E0"
                   onPress={() => {
                     setModalVisible(false);
                     resetForm();
@@ -613,7 +613,7 @@ export default function NotasScreen() {
                 <Button
                   flex={1}
                   size="$4"
-                  backgroundColor="#0960a7"
+                  background="#0960a7"
                   onPress={handleCreateGrade}
                   disabled={loading}
                 >
@@ -654,7 +654,7 @@ export default function NotasScreen() {
               <Button
                 flex={1}
                 size="$4"
-                backgroundColor="#E0E0E0"
+                background="#E0E0E0"
                 onPress={() => {
                   setEditModalVisible(false);
                   setEditScoreIndex(null);
@@ -666,7 +666,7 @@ export default function NotasScreen() {
               <Button
                 flex={1}
                 size="$4"
-                backgroundColor="#0960a7"
+                background="#0960a7"
                 onPress={handleEditScore}
                 disabled={loading}
               >
@@ -715,7 +715,7 @@ export default function NotasScreen() {
               <Button
                 flex={1}
                 size="$4"
-                backgroundColor="#E0E0E0"
+                background="#E0E0E0"
                 onPress={() => {
                   setAddScoreModalVisible(false);
                   setAddScoreValue("");
@@ -727,7 +727,7 @@ export default function NotasScreen() {
               <Button
                 flex={1}
                 size="$4"
-                backgroundColor="#4CAF50"
+                background="#4CAF50"
                 onPress={confirmAddScore}
                 disabled={loading}
               >
@@ -767,7 +767,7 @@ export default function NotasScreen() {
 
               <Text style={styles.label}>Notas (0-10):</Text>
               {editAllScoresData.map((score, index) => (
-                <XStack key={index} gap="$2" mb="$2" alignItems="center">
+                <XStack key={index} gap="$2" mb="$2" items="center">
                   <Text style={{ width: 60, fontSize: 14, fontWeight: "600" }}>
                     Nota {index + 1}:
                   </Text>
@@ -791,7 +791,7 @@ export default function NotasScreen() {
 
               <Button
                 size="$3"
-                backgroundColor="#4CAF50"
+                background="#4CAF50"
                 onPress={handleAddScoreToList}
                 mt="$2"
                 mb="$3"
@@ -803,7 +803,7 @@ export default function NotasScreen() {
                 <Button
                   flex={1}
                   size="$4"
-                  backgroundColor="#E0E0E0"
+                  background="#E0E0E0"
                   onPress={() => {
                     setEditAllScoresModalVisible(false);
                     setEditAllScoresData([]);
@@ -815,7 +815,7 @@ export default function NotasScreen() {
                 <Button
                   flex={1}
                   size="$4"
-                  backgroundColor="#0960a7"
+                  background="#0960a7"
                   onPress={handleSaveAllScores}
                   disabled={loading}
                 >

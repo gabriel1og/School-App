@@ -26,7 +26,7 @@ export default function ProfessoresScreen() {
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadTeachers();
@@ -41,15 +41,22 @@ export default function ProfessoresScreen() {
     }
   };
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!name.trim()) newErrors.name = 'Nome é obrigatório';
+    if (!email.trim()) newErrors.email = 'E-mail é obrigatório';
+    if (!password.trim()) newErrors.password = 'Senha é obrigatória';
+    if (!passwordConfirmation.trim()) newErrors.passwordConfirmation = 'Confirmação de senha é obrigatória';
+    if (password.trim() && passwordConfirmation.trim() && password !== passwordConfirmation) {
+      newErrors.passwordConfirmation = 'Senhas não coincidem';
+    }
+    if (!address.trim()) newErrors.address = 'Endereço é obrigatório';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const saveTeacher = async () => {
-    if (!name.trim() || !email.trim() || !password.trim() || !passwordConfirmation.trim()) {
-      console.warn('Preencha os campos obrigatórios!');
-      return;
-    }
-    if (password !== passwordConfirmation) {
-      console.warn('Senhas não coincidem.');
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setSaving(true);
@@ -59,8 +66,7 @@ export default function ProfessoresScreen() {
         password,
         password_confirmation: passwordConfirmation,
         school_id: user?.school_id || '',
-        address: address || undefined,
-        phone: phone || undefined,
+        address: address,
       });
       setOpen(false);
       // reset
@@ -69,7 +75,7 @@ export default function ProfessoresScreen() {
       setPassword('');
       setPasswordConfirmation('');
       setAddress('');
-      setPhone('');
+      setErrors({});
       await loadTeachers();
     } catch (e: any) {
       console.error('Erro ao cadastrar professor:', e);
@@ -80,7 +86,7 @@ export default function ProfessoresScreen() {
 
   // Guard de rota: apenas admin pode acessar
   if (!loading && user?.user_type !== 'admin') {
-    return <Redirect href="/(app)/(tabs)/" />;
+    return <Redirect href="/(app)/(tabs)" />;
   }
 
   return (
@@ -119,15 +125,72 @@ export default function ProfessoresScreen() {
         <Sheet.Frame p="$4" background="#fff">
           <YStack gap="$3">
             <Text fontSize="$7" fontWeight="700">Cadastro de Professor</Text>
-            <Input placeholder="Nome" value={name} onChangeText={setName} />
-            <Input placeholder="E-mail" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-            <Input placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
-            <Input placeholder="Confirmar senha" value={passwordConfirmation} onChangeText={setPasswordConfirmation} secureTextEntry />
-            <Input placeholder="Endereço (opcional)" value={address} onChangeText={setAddress} />
-            <Input placeholder="Telefone (opcional)" value={phone} onChangeText={setPhone} />
+            <YStack>
+              <Input
+                placeholder="Nome"
+                value={name}
+                onChangeText={(v) => {
+                  setName(v);
+                  if (errors.name) setErrors((e) => ({ ...e, name: '' }));
+                }}
+              />
+              {!!errors.name && <Text color="#DC2626" fontSize="$2">{errors.name}</Text>}
+            </YStack>
+
+            <YStack>
+              <Input
+                placeholder="E-mail"
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  if (errors.email) setErrors((e) => ({ ...e, email: '' }));
+                }}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+              {!!errors.email && <Text color="#DC2626" fontSize="$2">{errors.email}</Text>}
+            </YStack>
+
+            <YStack>
+              <Input
+                placeholder="Senha"
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  if (errors.password) setErrors((e) => ({ ...e, password: '' }));
+                }}
+                secureTextEntry
+              />
+              {!!errors.password && <Text color="#DC2626" fontSize="$2">{errors.password}</Text>}
+            </YStack>
+
+            <YStack>
+              <Input
+                placeholder="Confirmar senha"
+                value={passwordConfirmation}
+                onChangeText={(v) => {
+                  setPasswordConfirmation(v);
+                  if (errors.passwordConfirmation) setErrors((e) => ({ ...e, passwordConfirmation: '' }));
+                }}
+                secureTextEntry
+              />
+              {!!errors.passwordConfirmation && <Text color="#DC2626" fontSize="$2">{errors.passwordConfirmation}</Text>}
+            </YStack>
+
+            <YStack>
+              <Input
+                placeholder="Endereço"
+                value={address}
+                onChangeText={(v) => {
+                  setAddress(v);
+                  if (errors.address) setErrors((e) => ({ ...e, address: '' }));
+                }}
+              />
+              {!!errors.address && <Text color="#DC2626" fontSize="$2">{errors.address}</Text>}
+            </YStack>
 
             <XStack gap="$2" mt="$2">
-              <Button flex={1} theme="alt1" onPress={() => setOpen(false)} disabled={saving}>
+              <Button flex={1} onPress={() => setOpen(false)} disabled={saving}>
                 Cancelar
               </Button>
               <Button flex={1} onPress={saveTeacher} disabled={saving}>
