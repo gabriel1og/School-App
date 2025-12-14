@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { teacherService } from '@/src/services/teacher.service';
-import type { Teacher } from '@/src/types/teacher.types';
-import { useAuth } from '@/src/hooks/useAuth';
-import { Redirect } from 'expo-router';
+import { useAuth } from "@/src/hooks/useAuth";
+import { teacherService } from "@/src/services/teacher.service";
+import type { Teacher } from "@/src/types/teacher.types";
+import { Redirect } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Button,
   Input,
@@ -12,7 +12,7 @@ import {
   View,
   XStack,
   YStack,
-} from 'tamagui';
+} from "tamagui";
 
 export default function ProfessoresScreen() {
   const { user, loading } = useAuth();
@@ -21,12 +21,12 @@ export default function ProfessoresScreen() {
   const [saving, setSaving] = useState(false);
 
   // form
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     loadTeachers();
@@ -37,17 +37,22 @@ export default function ProfessoresScreen() {
       const data = await teacherService.getAll();
       setTeachers(data);
     } catch (e) {
-      console.error('Erro ao buscar professores:', e);
+      console.error("Erro ao buscar professores:", e);
     }
   };
 
   const saveTeacher = async () => {
-    if (!name.trim() || !email.trim() || !password.trim() || !passwordConfirmation.trim()) {
-      console.warn('Preencha os campos obrigatórios!');
+    if (
+      !name.trim() ||
+      !email.trim() ||
+      !password.trim() ||
+      !passwordConfirmation.trim()
+    ) {
+      console.warn("Preencha os campos obrigatórios!");
       return;
     }
     if (password !== passwordConfirmation) {
-      console.warn('Senhas não coincidem.');
+      console.warn("Senhas não coincidem.");
       return;
     }
 
@@ -58,36 +63,47 @@ export default function ProfessoresScreen() {
         email,
         password,
         password_confirmation: passwordConfirmation,
-        school_id: user?.school_id || '',
+        school_id: user?.school_id || "",
         address: address || undefined,
         phone: phone || undefined,
       });
       setOpen(false);
       // reset
-      setName('');
-      setEmail('');
-      setPassword('');
-      setPasswordConfirmation('');
-      setAddress('');
-      setPhone('');
+      setName("");
+      setEmail("");
+      setPassword("");
+      setPasswordConfirmation("");
+      setAddress("");
+      setPhone("");
       await loadTeachers();
     } catch (e: any) {
-      console.error('Erro ao cadastrar professor:', e);
+      console.error("Erro ao cadastrar professor:", e);
     } finally {
       setSaving(false);
     }
   };
 
   // Guard de rota: apenas admin pode acessar
-  if (!loading && user?.user_type !== 'admin') {
+  if (!loading && user?.user_type !== "admin") {
     return <Redirect href="/(app)/(tabs)/" />;
   }
 
   return (
     <View flex={1} background="white" p="$4">
       <XStack justify="space-between" items="center" mb="$4">
-        <Text fontSize="$8" fontWeight="bold" color="#0960a7">Professores</Text>
-        <Button onPress={() => setOpen(true)}>Novo</Button>
+        <Text
+          fontSize="$8"
+          fontWeight="bold"
+          color="#0960a7"
+          style={{ fontFamily: "Montserrat-Regular" }}
+        >
+          Professores
+        </Text>
+        <Button onPress={() => setOpen(true)}>
+          <Text fontWeight={"600"} style={{ fontFamily: "Montserrat-Regular" }}>
+            Novo
+          </Text>
+        </Button>
       </XStack>
 
       <ScrollView>
@@ -105,8 +121,20 @@ export default function ProfessoresScreen() {
               shadowOpacity={0.05}
               shadowRadius={8}
             >
-              <Text fontSize="$6" fontWeight="700" color="#111827">{t.name}</Text>
-              <Text color="#6B7280">{t.email}</Text>
+              <Text
+                fontSize="$6"
+                fontWeight="700"
+                color="#111827"
+                style={{ fontFamily: "Montserrat-Regular" }}
+              >
+                {t.name}
+              </Text>
+              <Text
+                color="#6B7280"
+                style={{ fontFamily: "Montserrat-Regular" }}
+              >
+                {t.email}
+              </Text>
             </YStack>
           ))}
           {teachers.length === 0 && (
@@ -118,20 +146,75 @@ export default function ProfessoresScreen() {
       <Sheet modal open={open} onOpenChange={setOpen} snapPoints={[85]}>
         <Sheet.Frame p="$4" background="#fff">
           <YStack gap="$3">
-            <Text fontSize="$7" fontWeight="700">Cadastro de Professor</Text>
-            <Input placeholder="Nome" value={name} onChangeText={setName} />
-            <Input placeholder="E-mail" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-            <Input placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
-            <Input placeholder="Confirmar senha" value={passwordConfirmation} onChangeText={setPasswordConfirmation} secureTextEntry />
-            <Input placeholder="Endereço (opcional)" value={address} onChangeText={setAddress} />
-            <Input placeholder="Telefone (opcional)" value={phone} onChangeText={setPhone} />
+            <Text
+              fontSize="$7"
+              fontWeight="700"
+              style={{ fontFamily: "Montserrat-Regular" }}
+            >
+              Cadastro de Professor
+            </Text>
+            <Input
+              placeholder="Nome"
+              value={name}
+              onChangeText={setName}
+              style={{ fontFamily: "Montserrat-Regular" }}
+            />
+            <Input
+              placeholder="E-mail"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={{ fontFamily: "Montserrat-Regular" }}
+            />
+            <Input
+              placeholder="Senha"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              style={{ fontFamily: "Montserrat-Regular" }}
+            />
+            <Input
+              placeholder="Confirmar senha"
+              value={passwordConfirmation}
+              onChangeText={setPasswordConfirmation}
+              secureTextEntry
+              style={{ fontFamily: "Montserrat-Regular" }}
+            />
+            <Input
+              placeholder="Endereço (opcional)"
+              value={address}
+              onChangeText={setAddress}
+              style={{ fontFamily: "Montserrat-Regular" }}
+            />
+            <Input
+              placeholder="Telefone (opcional)"
+              value={phone}
+              onChangeText={setPhone}
+              style={{ fontFamily: "Montserrat-Regular" }}
+            />
 
             <XStack gap="$2" mt="$2">
-              <Button flex={1} theme="alt1" onPress={() => setOpen(false)} disabled={saving}>
-                Cancelar
+              <Button
+                flex={1}
+                theme="red"
+                onPress={() => setOpen(false)}
+                disabled={saving}
+              >
+                <Text
+                  fontWeight={"600"}
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  Cancelar
+                </Text>
               </Button>
               <Button flex={1} onPress={saveTeacher} disabled={saving}>
-                {saving ? 'Salvando...' : 'Salvar'}
+                <Text
+                  fontWeight={"600"}
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {saving ? "Salvando..." : "Salvar"}
+                </Text>
               </Button>
             </XStack>
           </YStack>

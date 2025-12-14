@@ -135,10 +135,19 @@ export default function AlunosScreen() {
       <YStack p="$4" bg="#003866" rounded={15}>
         <XStack justify="space-between" items="center" mb="$6">
           <YStack>
-            <Text fontSize={28} fontWeight="bold" color="white">
+            <Text
+              fontSize={28}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              fontWeight="bold"
+              color="white"
+            >
               Alunos
             </Text>
-            <Text fontSize={14} color="rgba(255,255,255,0.8)">
+            <Text
+              fontSize={14}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              color="rgba(255,255,255,0.8)"
+            >
               {students.length} alunos cadastrados
             </Text>
           </YStack>
@@ -151,7 +160,13 @@ export default function AlunosScreen() {
             height={44}
             icon={<UserPlus size={18} color="#003866" />}
           >
-            Criar
+            <Text
+              color="#003866"
+              fontWeight={"600"}
+              style={{ fontFamily: "Montserrat-Regular" }}
+            >
+              Criar
+            </Text>
           </Button>
         </XStack>
 
@@ -174,6 +189,7 @@ export default function AlunosScreen() {
             borderWidth={0}
             color="white"
             fontSize={16}
+            style={{ fontFamily: "Montserrat-Regular" }}
           />
         </XStack>
       </YStack>
@@ -203,22 +219,41 @@ export default function AlunosScreen() {
                   items="center"
                   justify="center"
                 >
-                  <Text fontSize={18} fontWeight="600" color="#6B7280">
+                  <Text
+                    fontSize={18}
+                    fontWeight="600"
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                    color="#6B7280"
+                  >
                     {getInitials(student.name)}
                   </Text>
                 </View>
 
                 <YStack flex={1} gap="$1.5">
-                  <Text fontSize={18} fontWeight="bold" color="#111827" mb="$1">
+                  <Text
+                    fontSize={18}
+                    fontWeight="bold"
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                    color="#111827"
+                    mb="$1"
+                  >
                     {student.name}
                   </Text>
-                  <Text fontSize={14} color="#6B7280">
+                  <Text
+                    fontSize={14}
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                    color="#6B7280"
+                  >
                     Reg. {student.registration_number}
                   </Text>
 
                   <XStack gap="$1" items="center" mt="$1">
                     <Mail size={14} color="#6B7280" />
-                    <Text fontSize={14} color="#6B7280">
+                    <Text
+                      fontSize={14}
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                      color="#6B7280"
+                    >
                       {student.email}
                     </Text>
                   </XStack>
@@ -226,7 +261,11 @@ export default function AlunosScreen() {
                   {student.phone && (
                     <XStack gap="$1" items="center">
                       <Phone size={14} color="#6B7280" />
-                      <Text fontSize={14} color="#6B7280">
+                      <Text
+                        fontSize={14}
+                        style={{ fontFamily: "Montserrat-Regular" }}
+                        color="#6B7280"
+                      >
                         {student.phone}
                       </Text>
                     </XStack>
@@ -244,15 +283,26 @@ export default function AlunosScreen() {
                 mt="$3"
                 height={40}
               >
-                Editar
+                <Text
+                  fontWeight={"600"}
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  Editar
+                </Text>
               </Button>
             </YStack>
           ))}
 
           {filteredStudents.length === 0 && (
             <YStack items="center" py="$8">
-              <Text color="#6B7280" fontSize={16}>
-                {searchQuery ? "No students found" : "No students yet"}
+              <Text
+                color="#6B7280"
+                fontSize={16}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              >
+                {searchQuery
+                  ? "Nenhum aluno encontrado"
+                  : "O aluno digitado não foi encontrado "}
               </Text>
             </YStack>
           )}
@@ -279,7 +329,12 @@ export default function AlunosScreen() {
         >
           <YStack gap="$4">
             <XStack justify="space-between" items="center">
-              <Text fontSize={24} fontWeight="bold" color="#111827">
+              <Text
+                fontSize={24}
+                fontWeight="bold"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#111827"
+              >
                 {editingStudent ? "Editar Aluno" : "Adicionar Novo Aluno"}
               </Text>
               <Button
@@ -296,7 +351,12 @@ export default function AlunosScreen() {
 
             <YStack gap="$3">
               <YStack gap="$2">
-                <Text fontSize={14} fontWeight="600" color="#374151">
+                <Text
+                  fontSize={14}
+                  fontWeight="600"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  color="#374151"
+                >
                   Nome *
                 </Text>
                 <Input
@@ -309,11 +369,17 @@ export default function AlunosScreen() {
                   rounded={12}
                   p="$3"
                   fontSize={16}
+                  style={{ fontFamily: "Montserrat-Regular" }}
                 />
               </YStack>
 
               <YStack gap="$2">
-                <Text fontSize={14} fontWeight="600" color="#374151">
+                <Text
+                  fontSize={14}
+                  fontWeight="600"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  color="#374151"
+                >
                   Email *
                 </Text>
                 <Input
@@ -328,11 +394,17 @@ export default function AlunosScreen() {
                   rounded={12}
                   p="$3"
                   fontSize={16}
+                  style={{ fontFamily: "Montserrat-Regular" }}
                 />
               </YStack>
 
               <YStack gap="$2">
-                <Text fontSize={14} fontWeight="600" color="#374151">
+                <Text
+                  fontSize={14}
+                  fontWeight="600"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  color="#374151"
+                >
                   Número de Matrícula *
                 </Text>
                 <Input
@@ -345,11 +417,17 @@ export default function AlunosScreen() {
                   rounded={12}
                   p="$3"
                   fontSize={16}
+                  style={{ fontFamily: "Montserrat-Regular" }}
                 />
               </YStack>
 
               <YStack gap="$2">
-                <Text fontSize={14} fontWeight="600" color="#374151">
+                <Text
+                  fontSize={14}
+                  fontWeight="600"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  color="#374151"
+                >
                   Telefone
                 </Text>
                 <Input
@@ -363,6 +441,7 @@ export default function AlunosScreen() {
                   rounded={12}
                   p="$3"
                   fontSize={16}
+                  style={{ fontFamily: "Montserrat-Regular" }}
                 />
               </YStack>
             </YStack>
@@ -377,12 +456,15 @@ export default function AlunosScreen() {
                 fontSize={16}
                 fontWeight="600"
                 disabled={loading}
+                hoverStyle={{ bg: "#0e2b5a" }}
               >
-                {loading
-                  ? "Salvando..."
-                  : editingStudent
-                  ? "Atualizar Aluno"
-                  : "Criar Aluno"}
+                <Text color="#fff" style={{ fontFamily: "Montserrat-Regular" }}>
+                  {loading
+                    ? "Salvando..."
+                    : editingStudent
+                    ? "Atualizar Aluno"
+                    : "Criar Aluno"}
+                </Text>
               </Button>
 
               <Button
@@ -396,7 +478,9 @@ export default function AlunosScreen() {
                 fontSize={16}
                 fontWeight="600"
               >
-                Cancelar
+                <Text style={{ fontFamily: "Montserrat-Regular" }}>
+                  Cancelar
+                </Text>
               </Button>
             </YStack>
           </YStack>

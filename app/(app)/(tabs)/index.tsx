@@ -1,7 +1,12 @@
-import { BookOpen, ChartColumn, Users, GraduationCap } from "@tamagui/lucide-icons";
+import { useAuth } from "@/src/hooks/useAuth";
+import {
+  BookOpen,
+  ChartColumn,
+  GraduationCap,
+  Users,
+} from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { Heading, Text, View, XStack, YStack } from "tamagui";
-import { useAuth } from "@/src/hooks/useAuth";
 
 interface QuickActionItem {
   id: string;
@@ -58,13 +63,20 @@ export default function HomeScreen() {
   return (
     <View flex={1} background="white" p="$4">
       <XStack justify="space-between" items="center" mb="$4">
-        <Heading size="$7" fontWeight="700">
+        <Heading
+          size="$6"
+          fontWeight="700"
+          style={{ fontFamily: "Montserrat-Regular" }}
+        >
           Home
         </Heading>
       </XStack>
 
       <XStack flexWrap="wrap" gap="$3" justify="space-between">
-        {(user?.user_type === 'admin' ? quickActions : quickActions.filter(a => a.id !== 'teachers')).map((action) => {
+        {(user?.user_type === "admin"
+          ? quickActions
+          : quickActions.filter((a) => a.id !== "teachers")
+        ).map((action) => {
           const Icon = action.icon;
           return (
             <YStack
@@ -108,7 +120,12 @@ export default function HomeScreen() {
               >
                 <Icon size={32} color={action.iconColor} />
               </View>
-              <Text fontSize="$5" fontWeight="600" color="#1F2937">
+              <Text
+                fontSize="$5"
+                fontWeight="600"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#1F2937"
+              >
                 {action.label}
               </Text>
             </YStack>
