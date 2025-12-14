@@ -429,7 +429,7 @@ export default function NotasScreen() {
         <Text
           fontSize="$8"
           fontWeight="bold"
-          color="#0e2b5a"
+          color="#0960a7"
           style={{ fontFamily: "Montserrat-Regular" }}
         >
           Notas
