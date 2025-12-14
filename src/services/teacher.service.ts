@@ -12,10 +12,15 @@ const normalizeTeacher = (data: any): Teacher => {
 export const teacherService = {
   /**
    * Criar professor (apenas admin)
-   * POST /teachers
+   * POST /users
    */
   async create(teacherData: CreateTeacherData): Promise<Teacher> {
-    const response = await api.post<any>('/teachers', { teacher: teacherData });
+    const response = await api.post<any>('/users', {
+      user: {
+        ...teacherData,
+        user_type: 'teacher',
+      },
+    });
     return normalizeTeacher(response.data);
   },
 
@@ -30,27 +35,27 @@ export const teacherService = {
 
   /**
    * Obter professor específico
-   * GET /teachers/:id
+   * GET /users/:id
    */
   async getById(id: string): Promise<Teacher> {
-    const response = await api.get<any>(`/teachers/${id}`);
+    const response = await api.get<any>(`/users/${id}`);
     return normalizeTeacher(response.data);
   },
 
   /**
    * Atualizar professor
-   * PUT /teachers/:id
+   * PUT /users/:id
    */
   async update(id: string, teacherData: UpdateTeacherData): Promise<Teacher> {
-    const response = await api.put<any>(`/teachers/${id}`, { teacher: teacherData });
+    const response = await api.put<any>(`/users/${id}`, { user: teacherData });
     return normalizeTeacher(response.data);
   },
 
   /**
    * Deletar professor (apenas admin)
-   * DELETE /teachers/:id
+   * DELETE /users/:id
    */
   async delete(id: string): Promise<void> {
-    await api.delete(`/teachers/${id}`);
+    await api.delete(`/users/${id}`);
   }
 };

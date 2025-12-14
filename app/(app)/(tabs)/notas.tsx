@@ -896,7 +896,7 @@ export default function NotasScreen() {
 
               <Text style={styles.label}>Notas (0-10):</Text>
               {editAllScoresData.map((score, index) => (
-                <XStack key={index} gap="$2" mb="$2" alignItems="center">
+                <XStack key={index} gap="$2" mb="$2" items="center">
                   <Text style={{ width: 60, fontSize: 14, fontWeight: "600" }}>
                     Nota {index + 1}:
                   </Text>

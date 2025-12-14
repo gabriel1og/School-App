@@ -524,17 +524,12 @@ export default function DisciplinasScreen() {
       {alertVisible && (
         <View
           position="absolute"
-          t={40}
-          l={20}
-          r={20}
           p="$4"
-          bg="#fee2e2"
-          rounded="$4"
+          background="#fee2e2"
           borderWidth={1}
           borderColor="#fca5a5"
-          z={999999}
-          elevationAndroid={20}
           pointerEvents="auto"
+          style={{ top: 40, left: 20, right: 20, borderRadius: 8, zIndex: 999999, elevation: 20 }}
         >
           <Text fontSize="$6" fontWeight="bold" color="#b91c1c">
             {alertTitle}

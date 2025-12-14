@@ -1,5 +1,6 @@
 import { tokenStorage } from '../storage/tokenStorage';
-import { AuthResponse, LoginCredentials, RegisterData, User } from '../types/auth.types';
+import { AuthResponse, LoginCredentials, RegisterData } from '../types/auth.types';
+import type { User } from '../types/user.types';
 import api from './api';
 
 export const authService = {

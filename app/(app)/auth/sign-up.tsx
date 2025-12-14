@@ -24,20 +24,19 @@ export default function SignUp() {
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
   const [loadingSchools, setLoadingSchools] = useState(false);
   const [schoolsMessage, setSchoolsMessage] = useState<string | null>(null);
-
-  const [schoolName, setSchoolName] = useState("");
-  const [schoolEmail, setSchoolEmail] = useState("");
-  const [schoolAddress, setSchoolAddress] = useState("");
-  const [schoolPhone, setSchoolPhone] = useState("");
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
-
-  const [selectedSchoolId, setSelectedSchoolId] = useState("");
+  
+  const [schoolName, setSchoolName] = useState('');
+  const [schoolEmail, setSchoolEmail] = useState('');
+  const [schoolAddress, setSchoolAddress] = useState('');
+  const [schoolPhone, setSchoolPhone] = useState('');
+  
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [address, setAddress] = useState('');
+  
+  const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [isSchoolListOpen, setIsSchoolListOpen] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
@@ -81,8 +80,9 @@ export default function SignUp() {
     else if (passwordConfirmation !== password)
       e.password_confirmation = "As senhas não coincidem.";
 
-    if (role === "teacher") {
-      if (!selectedSchoolId) e.selectedSchoolId = "Selecione uma escola.";
+    if (role === 'teacher') {
+      if (!address.trim()) e.address = 'Endereço é obrigatório.';
+      if (!selectedSchoolId) e.selectedSchoolId = 'Selecione uma escola.';
     } else {
       if (!schoolName.trim()) e.schoolName = "Nome da escola é obrigatório.";
       if (!schoolEmail.trim())
@@ -91,16 +91,7 @@ export default function SignUp() {
         e.schoolEmail = "Informe um e-mail de escola válido.";
     }
     return e;
-  }, [
-    name,
-    email,
-    password,
-    passwordConfirmation,
-    role,
-    selectedSchoolId,
-    schoolName,
-    schoolEmail,
-  ]);
+  }, [name, email, password, passwordConfirmation, address, role, selectedSchoolId, schoolName, schoolEmail]);
 
   useEffect(() => {
     if (role === "teacher") {
@@ -123,7 +114,6 @@ export default function SignUp() {
       delete next.password;
       delete next.password_confirmation;
       delete next.address;
-      delete next.phone;
       return next;
     });
     setSubmitError(null);
@@ -145,7 +135,7 @@ export default function SignUp() {
       if (!list.length) {
         setSchoolsMessage("Nenhuma escola cadastrada");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       if (e?.request && !e?.response) {
         const msg = "Nenhuma escola encontrada, tente novamente mais tarde.";
@@ -172,7 +162,8 @@ export default function SignUp() {
   const canSubmit = useMemo(() => {
     if (!name || !email || !password || !passwordConfirmation) return false;
     if (password !== passwordConfirmation) return false;
-    if (role === "teacher") {
+    if (role === 'teacher' && !address.trim()) return false;
+    if (role === 'teacher') {
       return !!selectedSchoolId;
     }
     return !!schoolName && !!schoolEmail;
@@ -196,6 +187,7 @@ export default function SignUp() {
     };
     if (role === "teacher") {
       markAllTouched.selectedSchoolId = true;
+      markAllTouched.address = true;
     } else {
       markAllTouched.schoolName = true;
       markAllTouched.schoolEmail = true;
@@ -221,7 +213,6 @@ export default function SignUp() {
           user_type: "teacher",
           school_id: selectedSchoolId,
           address: address || undefined,
-          phone: phone || undefined,
         };
         await signUp(payload);
       } else {
@@ -240,7 +231,6 @@ export default function SignUp() {
           user_type: "admin",
           school_id: created.id,
           address: address || undefined,
-          phone: phone || undefined,
         };
         await signUp(payload);
       }
@@ -261,20 +251,8 @@ export default function SignUp() {
   };
 
   return (
-    <ScrollView
-      ref={(r) => (scrollRef.current = r)}
-      contentContainerStyle={{ padding: 24, backgroundColor: "white" }}
-    >
-      <Text
-        style={{
-          fontSize: 24,
-          fontWeight: "600",
-          marginBottom: 16,
-          fontFamily: "Montserrat-Regular",
-        }}
-      >
-        Criar conta
-      </Text>
+    <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 24, backgroundColor: 'white' }}>
+      <Text style={{ fontSize: 24, fontWeight: '600', marginBottom: 16, fontFamily: "Montserrat-Regular", }}>Criar conta</Text>
 
       {submitError ? (
         <View
@@ -647,50 +625,19 @@ export default function SignUp() {
           }}
         />
         {touched.password_confirmation && errors.password_confirmation ? (
-          <Text
-            style={{
-              color: "#dc2626",
-              marginBottom: 10,
-              fontFamily: "Montserrat-Regular",
-            }}
-          >
-            {errors.password_confirmation}
-          </Text>
-        ) : (
-          <View style={{ height: 10 }} />
-        )}
-        <Text style={{ marginBottom: 6, fontFamily: "Montserrat-Regular" }}>
-          Endereço
-        </Text>
+          <Text style={{ color: '#dc2626', marginBottom: 10, fontFamily: "Montserrat-Regular", }}>{errors.password_confirmation}</Text>
+        ) : <View style={{ height: 10 }} />}
+        <Text style={{ marginBottom: 6, fontFamily: "Montserrat-Regular", }}>Endereço {role === 'teacher' ? <Text style={{ color: '#dc2626', fontFamily: "Montserrat-Regular", }}>*</Text> : null}</Text>
         <TextInput
           value={address}
           onChangeText={setAddress}
-          placeholder="Endereço (opcional)"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 8,
-            padding: 12,
-            marginBottom: 10,
-            fontFamily: "Montserrat-Regular",
-          }}
+          onBlur={() => setTouched((p) => ({ ...p, address: true }))}
+          placeholder="Endereço"
+          style={{ borderWidth: 1, borderColor: role === 'teacher' && touched.address && (errors as any).address ? '#dc2626' : '#ddd', borderRadius: 8, padding: 12, marginBottom: 6, fontFamily: "Montserrat-Regular" }}
         />
-        <Text style={{ marginBottom: 6, fontFamily: "Montserrat-Regular" }}>
-          Telefone
-        </Text>
-        <TextInput
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Telefone (opcional)"
-          keyboardType="phone-pad"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 8,
-            padding: 12,
-            fontFamily: "Montserrat-Regular",
-          }}
-        />
+        {role === 'teacher' && touched.address && (errors as any).address ? (
+          <Text style={{ color: '#dc2626', marginBottom: 10, fontFamily: "Montserrat-Regular" }}>{(errors as any).address}</Text>
+        ) : <View style={{ height: 10 }} />}
       </View>
 
       <TouchableOpacity
