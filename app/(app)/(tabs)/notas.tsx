@@ -692,8 +692,20 @@ export default function NotasScreen() {
                   value={scoreInput}
                   onChangeText={setScoreInput}
                 />
-                <Button size="$3" bg="#4CAF50" onPress={handleAddScore}>
-                  <Text color="white">+</Text>
+                <Button
+                  size="$4"
+                  bg="#4CAF50"
+                  hoverStyle={{ bg: "#45a049" }}
+                  onPress={handleAddScore}
+                >
+                  <Text
+                    color="white"
+                    fontWeight={"600"}
+                    fontSize={"$5"}
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                  >
+                    +
+                  </Text>
                 </Button>
               </XStack>
 
