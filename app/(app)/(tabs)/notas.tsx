@@ -4,17 +4,25 @@ import { subjectService } from "@/src/services/subject.service";
 import { CreateGradeData, Grade } from "@/src/types/grade.types";
 import { Student } from "@/src/types/student.types";
 import { Subject } from "@/src/types/subject.types";
-import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  FlatList,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
-import { Button, Spinner, Text, View, XStack } from "tamagui";
+    BookOpen,
+    GraduationCap,
+    Plus,
+    Search,
+    X
+} from "@tamagui/lucide-icons";
+import { useCallback, useEffect, useState } from "react";
+import {
+    Button,
+    Input,
+    ScrollView,
+    Sheet,
+    Spinner,
+    Text,
+    View,
+    XStack,
+    YStack,
+} from "tamagui";
 
 type FilterType = "all" | "student" | "subject";
 
@@ -22,19 +30,16 @@ export default function NotasScreen() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [filteredGrades, setFilteredGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [addScoreModalVisible, setAddScoreModalVisible] = useState(false);
-  const [editAllScoresModalVisible, setEditAllScoresModalVisible] =
-    useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [currentGrade, setCurrentGrade] = useState<Grade | null>(null);
   const [editAllScoresData, setEditAllScoresData] = useState<number[]>([]);
 
@@ -44,27 +49,67 @@ export default function NotasScreen() {
     scores: [],
   });
   const [scoreInput, setScoreInput] = useState("");
-  const [editScoreIndex, setEditScoreIndex] = useState<number | null>(null);
-  const [editScoreValue, setEditScoreValue] = useState("");
-  const [addScoreValue, setAddScoreValue] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
+  const filterGrades = useCallback(() => {
+    let filtered = [...grades];
+
+    // Filtrar por tipo (student/subject/all)
+    if (filterType === "student" && selectedStudentId) {
+      filtered = filtered.filter((g) => g.student_id === selectedStudentId);
+    } else if (filterType === "subject" && selectedSubjectId) {
+      filtered = filtered.filter((g) => g.subject_id === selectedSubjectId);
+    }
+
+    // Filtrar por busca
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((grade) => {
+        const studentName = getStudentName(grade.student_id).toLowerCase();
+        const subjectName = getSubjectName(grade.subject_id).toLowerCase();
+        return studentName.includes(query) || subjectName.includes(query);
+      });
+    }
+
+    setFilteredGrades(filtered);
+  }, [grades, filterType, selectedStudentId, selectedSubjectId, searchQuery]);
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
   useEffect(() => {
-    if (filterType === "student" && selectedStudentId) {
-      loadGrades();
-    } else if (filterType === "subject" && selectedSubjectId) {
-      loadGrades();
-    } else if (filterType === "all") {
-      loadGrades();
+    filterGrades();
+  }, [filterGrades]);
+
+  // Verificar se já existe nota quando selecionar aluno e disciplina
+  useEffect(() => {
+    if (open && formData.student_id && formData.subject_id) {
+      const existingGrade = grades.find(
+        (g) =>
+          g.student_id === formData.student_id &&
+          g.subject_id === formData.subject_id
+      );
+
+      if (existingGrade) {
+        // Fechar modal de criação e abrir modal de edição
+        setOpen(false);
+        setAlertMessage(
+          "Já existe uma nota cadastrada para este aluno nesta disciplina."
+        );
+        setShowAlert(true);
+        setTimeout(() => {
+          setShowAlert(false);
+          openEditModal(existingGrade);
+        }, 2000);
+      }
     }
-  }, [filterType, selectedStudentId, selectedSubjectId]);
+  }, [formData.student_id, formData.subject_id, open, grades]);
 
   const loadInitialData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const [gradesData, studentsData, subjectsData] = await Promise.all([
         gradeService.getAll(),
         studentService.getAll(),
@@ -74,54 +119,70 @@ export default function NotasScreen() {
       setStudents(studentsData);
       setSubjects(subjectsData);
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao carregar dados");
+      console.error("Erro ao carregar dados:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const loadGrades = async () => {
-    setRefreshing(true);
     try {
-      let gradesData: Grade[];
-      if (filterType === "student" && selectedStudentId) {
-        gradesData = await gradeService.getAll({
-          student_id: selectedStudentId,
-        });
-      } else if (filterType === "subject" && selectedSubjectId) {
-        gradesData = await gradeService.getAll({
-          subject_id: selectedSubjectId,
-        });
-      } else {
-        gradesData = await gradeService.getAll();
-      }
+      const gradesData = await gradeService.getAll();
       setGrades(gradesData);
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao carregar notas");
-    } finally {
-      setRefreshing(false);
+      console.error("Erro ao carregar notas:", error);
     }
+  };
+
+  const openAddModal = () => {
+    setCurrentGrade(null);
+    resetForm();
+    setOpen(true);
+  };
+
+  const openEditModal = (grade: Grade) => {
+    setCurrentGrade(grade);
+    setEditAllScoresData([...grade.scores]);
+    setEditOpen(true);
   };
 
   const handleCreateGrade = async () => {
     if (!formData.student_id || !formData.subject_id) {
-      Alert.alert("Atenção", "Selecione um aluno e uma disciplina");
+      console.warn("Selecione um aluno e uma disciplina");
       return;
     }
     if (formData.scores.length === 0) {
-      Alert.alert("Atenção", "Adicione pelo menos uma nota");
+      console.warn("Adicione pelo menos uma nota");
+      return;
+    }
+
+    // Verificar se já existe nota para esta combinação
+    const existingGrade = grades.find(
+      (g) =>
+        g.student_id === formData.student_id &&
+        g.subject_id === formData.subject_id
+    );
+
+    if (existingGrade) {
+      alert(
+        "Já existe uma nota cadastrada para este aluno nesta disciplina. Use o botão Editar para modificá-la."
+      );
       return;
     }
 
     try {
       setLoading(true);
       await gradeService.create(formData);
-      Alert.alert("Sucesso", "Nota criada com sucesso!");
-      setModalVisible(false);
+      setOpen(false);
       resetForm();
-      loadGrades();
+      await loadGrades();
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao criar nota");
+      console.error("Erro ao criar nota:", error);
+      const errorMessage =
+        error.response?.data?.errors?.join("\n") ||
+        error.response?.data?.error ||
+        "Erro ao criar nota";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -130,7 +191,7 @@ export default function NotasScreen() {
   const handleAddScore = () => {
     const score = parseFloat(scoreInput);
     if (isNaN(score) || score < 0 || score > 10) {
-      Alert.alert("Atenção", "Digite uma nota válida entre 0 e 10");
+      console.warn("Digite uma nota válida entre 0 e 10");
       return;
     }
     setFormData({
@@ -145,69 +206,6 @@ export default function NotasScreen() {
       ...formData,
       scores: formData.scores.filter((_, i) => i !== index),
     });
-  };
-
-  const handleEditScore = async () => {
-    if (!currentGrade || editScoreIndex === null) return;
-
-    const score = parseFloat(editScoreValue);
-    if (isNaN(score) || score < 0 || score > 10) {
-      Alert.alert("Atenção", "Digite uma nota válida entre 0 e 10");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await gradeService.updateScore(currentGrade.id, {
-        score_index: editScoreIndex,
-        update_score: score,
-      });
-      Alert.alert("Sucesso", "Nota atualizada com sucesso!");
-      setEditModalVisible(false);
-      setEditScoreIndex(null);
-      setEditScoreValue("");
-      loadGrades();
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao atualizar nota");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddScoreToGrade = (grade: Grade) => {
-    setCurrentGrade(grade);
-    setAddScoreValue("");
-    setAddScoreModalVisible(true);
-  };
-
-  const confirmAddScore = async () => {
-    if (!currentGrade) return;
-
-    const score = parseFloat(addScoreValue);
-    if (isNaN(score) || score < 0 || score > 10) {
-      Alert.alert("Atenção", "Digite uma nota válida entre 0 e 10");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await gradeService.addScore(currentGrade.id, { add_score: score });
-      Alert.alert("Sucesso", "Nota adicionada com sucesso!");
-      setAddScoreModalVisible(false);
-      setAddScoreValue("");
-      setCurrentGrade(null);
-      loadGrades();
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao adicionar nota");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openEditAllScoresModal = (grade: Grade) => {
-    setCurrentGrade(grade);
-    setEditAllScoresData([...grade.scores]);
-    setEditAllScoresModalVisible(true);
   };
 
   const handleUpdateScoreInList = (index: number, value: string) => {
@@ -231,7 +229,7 @@ export default function NotasScreen() {
     if (!currentGrade) return;
 
     if (editAllScoresData.length === 0) {
-      Alert.alert("Atenção", "Adicione pelo menos uma nota");
+      console.warn("Adicione pelo menos uma nota");
       return;
     }
 
@@ -239,7 +237,7 @@ export default function NotasScreen() {
       (score) => isNaN(score) || score < 0 || score > 10
     );
     if (hasInvalidScore) {
-      Alert.alert("Atenção", "Todas as notas devem estar entre 0 e 10");
+      console.warn("Todas as notas devem estar entre 0 e 10");
       return;
     }
 
@@ -248,49 +246,20 @@ export default function NotasScreen() {
       await gradeService.updateAllScores(currentGrade.id, {
         scores: editAllScoresData,
       });
-      Alert.alert("Sucesso", "Notas atualizadas com sucesso!");
-      setEditAllScoresModalVisible(false);
+      setEditOpen(false);
       setEditAllScoresData([]);
       setCurrentGrade(null);
-      loadGrades();
+      await loadGrades();
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao atualizar notas");
+      console.error("Erro ao atualizar notas:", error);
+      const errorMessage =
+        error.response?.data?.errors?.join("\n") ||
+        error.response?.data?.error ||
+        "Erro ao atualizar notas";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDeleteGrade = async (id: string) => {
-    Alert.alert(
-      "Confirmar",
-      "Deseja realmente deletar este registro de notas?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Deletar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await gradeService.delete(id);
-              Alert.alert("Sucesso", "Nota deletada com sucesso!");
-              loadGrades();
-            } catch (error: any) {
-              Alert.alert("Erro", error.message || "Erro ao deletar nota");
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const openEditModal = (grade: Grade, scoreIndex: number) => {
-    setCurrentGrade(grade);
-    setEditScoreIndex(scoreIndex);
-    setEditScoreValue(grade.scores[scoreIndex].toString());
-    setEditModalVisible(true);
   };
 
   const resetForm = () => {
@@ -315,34 +284,27 @@ export default function NotasScreen() {
   const getStatusInfo = (status: string) => {
     switch (status) {
       case "approved":
-        return { color: "#10B981", bg: "#D1FAE5", text: "Aprovado", icon: "✓" };
+        return { color: "#10B981", bg: "#D1FAE5", text: "Aprovado" };
       case "recovery":
-        return {
-          color: "#F59E0B",
-          bg: "#FEF3C7",
-          text: "Recuperação",
-          icon: "⚠",
-        };
+        return { color: "#F59E0B", bg: "#FEF3C7", text: "Recuperação" };
       case "failed":
-        return {
-          color: "#EF4444",
-          bg: "#FEE2E2",
-          text: "Reprovado",
-          icon: "✕",
-        };
+        return { color: "#EF4444", bg: "#FEE2E2", text: "Reprovado" };
       default:
-        return {
-          color: "#6B7280",
-          bg: "#F3F4F6",
-          text: "Incompleto",
-          icon: "⏳",
-        };
+        return { color: "#6B7280", bg: "#F3F4F6", text: "Incompleto" };
     }
+  };
+
+  const getInitials = (name: string) => {
+    const parts = name.split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   const groupGradesByStudent = () => {
     const grouped: { [key: string]: Grade[] } = {};
-    grades.forEach((grade) => {
+    filteredGrades.forEach((grade) => {
       if (!grouped[grade.student_id]) {
         grouped[grade.student_id] = [];
       }
@@ -357,118 +319,86 @@ export default function NotasScreen() {
 
   const groupedGrades = groupGradesByStudent();
 
-  const renderStudentGrades = ({
-    item,
-  }: {
-    item: { studentId: string; studentName: string; grades: Grade[] };
-  }) => (
-    <View style={styles.card}>
-      <Text style={styles.studentName}>{item.studentName}</Text>
-
-      {item.grades.map((grade, gradeIndex) => (
-        <View key={grade.id} style={styles.subjectContainer}>
-          <XStack justify="space-between" items="center" mb="$2">
-            <Text style={styles.subjectName}>
-              {getSubjectName(grade.subject_id)}
-            </Text>
-            <XStack gap="$2" items="center">
-              <TouchableOpacity
-                onPress={() => openEditAllScoresModal(grade)}
-                style={styles.editButton}
-              >
-                <Text style={styles.editButtonText}>Editar</Text>
-              </TouchableOpacity>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: getStatusInfo(grade.status).bg },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusIcon,
-                    { color: getStatusInfo(grade.status).color },
-                  ]}
-                >
-                  {getStatusInfo(grade.status).icon}
-                </Text>
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: getStatusInfo(grade.status).color },
-                  ]}
-                >
-                  {getStatusInfo(grade.status).text}
-                </Text>
-              </View>
-            </XStack>
-          </XStack>
-
-          <XStack gap="$2" flexWrap="wrap" items="center">
-            {grade.scores.map((score, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => openEditModal(grade, index)}
-                style={styles.scoreChip}
-              >
-                <Text style={styles.scoreText}>{score.toFixed(1)}</Text>
-              </TouchableOpacity>
-            ))}
-            <Text style={styles.averageText}>
-              Média: {grade.average.toFixed(2)}
-            </Text>
-          </XStack>
-        </View>
-      ))}
-    </View>
-  );
-
   return (
-    <View flex={1} bg="$background">
-      <View style={styles.header}>
-        <Text
-          fontSize="$8"
-          fontWeight="bold"
-          color="#0960a7"
-          style={{ fontFamily: "Montserrat-Regular" }}
-        >
-          Notas
-        </Text>
-        <Button
-          size="$4"
-          bg="#0075BE"
-          color="white"
-          hoverStyle={{ bg: "#0e2b5a" }}
-          onPress={() => setModalVisible(true)}
-          disabled={loading}
-        >
-          <Text
-            color="white"
-            fontWeight={"600"}
-            style={{ fontFamily: "Montserrat-Regular" }}
+    <View flex={1}>
+      <YStack p="$4" bg="#003866" rounded={15}>
+        <XStack justify="space-between" items="center" mb="$6">
+          <YStack>
+            <Text
+              fontSize={28}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              fontWeight="bold"
+              color="white"
+            >
+              Notas
+            </Text>
+            <Text
+              fontSize={14}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              color="rgba(255,255,255,0.8)"
+            >
+              {filteredGrades.length} registro(s) de notas
+            </Text>
+          </YStack>
+          <Button
+            onPress={openAddModal}
+            bg="white"
+            color="#003866"
+            rounded={15}
+            p="$4"
+            height={44}
+            icon={<Plus size={18} color="#003866" />}
           >
-            + Nova Nota
-          </Text>
-        </Button>
-      </View>
+            <Text
+              color="#003866"
+              fontWeight={"600"}
+              style={{ fontFamily: "Montserrat-Regular" }}
+            >
+              Criar
+            </Text>
+          </Button>
+        </XStack>
 
-      <View style={styles.filterContainer}>
+        <XStack
+          bg="rgba(255,255,255,0.2)"
+          rounded={15}
+          px="$4"
+          py="$2"
+          items="center"
+          gap="$2"
+          mb="$3"
+        >
+          <Search size={20} color="rgba(255,255,255,0.7)" />
+          <Input
+            flex={1}
+            placeholder="Buscar por aluno ou disciplina..."
+            placeholderTextColor="rgba(255,255,255,0.7)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            bg="transparent"
+            borderWidth={0}
+            color="white"
+            fontSize={16}
+            style={{ fontFamily: "Montserrat-Regular" }}
+          />
+        </XStack>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <XStack gap="$2" p="$2">
+          <XStack gap="$2">
             <Button
               size="$3"
-              bg={filterType === "all" ? "#0075BE" : "#e5efff"}
-              hoverStyle={{ bg: "#0075BE" }}
+              bg={filterType === "all" ? "white" : "rgba(255,255,255,0.2)"}
               onPress={() => {
                 setFilterType("all");
                 setSelectedStudentId("");
                 setSelectedSubjectId("");
               }}
+              rounded={10}
             >
               <Text
-                color={filterType === "all" ? "#fff" : "#0e2b5a"}
-                hoverStyle={{ color: "#fff" }}
+                color={filterType === "all" ? "#003866" : "white"}
                 fontWeight={"600"}
+                fontSize={14}
                 style={{ fontFamily: "Montserrat-Regular" }}
               >
                 Todas
@@ -476,14 +406,14 @@ export default function NotasScreen() {
             </Button>
             <Button
               size="$3"
-              bg={filterType === "student" ? "#0075BE" : "#e5efff"}
-              hoverStyle={{ bg: "#0075BE" }}
+              bg={filterType === "student" ? "white" : "rgba(255,255,255,0.2)"}
               onPress={() => setFilterType("student")}
+              rounded={10}
             >
               <Text
-                color={filterType === "student" ? "#fff" : "#0e2b5a"}
-                hoverStyle={{ color: "#fff" }}
+                color={filterType === "student" ? "#003866" : "white"}
                 fontWeight={"600"}
+                fontSize={14}
                 style={{ fontFamily: "Montserrat-Regular" }}
               >
                 Por Aluno
@@ -491,14 +421,14 @@ export default function NotasScreen() {
             </Button>
             <Button
               size="$3"
-              bg={filterType === "subject" ? "#0075BE" : "#e5efff"}
-              hoverStyle={{ bg: "#0075BE" }}
+              bg={filterType === "subject" ? "white" : "rgba(255,255,255,0.2)"}
               onPress={() => setFilterType("subject")}
+              rounded={10}
             >
               <Text
-                color={filterType === "subject" ? "#fff" : "#0e2b5a"}
-                hoverStyle={{ color: "#fff" }}
+                color={filterType === "subject" ? "#003866" : "white"}
                 fontWeight={"600"}
+                fontSize={14}
                 style={{ fontFamily: "Montserrat-Regular" }}
               >
                 Por Disciplina
@@ -508,684 +438,723 @@ export default function NotasScreen() {
         </ScrollView>
 
         {filterType === "student" && (
-          <View style={styles.pickerContainer}>
-            <Text style={styles.pickerLabel}>Selecione o Aluno:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <XStack gap="$2" p="$2">
-                {students.map((student) => (
-                  <Button
-                    key={student.id}
-                    size="$3"
-                    bg={
-                      selectedStudentId === student.id ? "#4CAF50" : "#F5F5F5"
-                    }
-                    hoverStyle={{ bg: "#4CAF50" }}
-                    onPress={() => setSelectedStudentId(student.id)}
-                  >
-                    <Text
-                      color={
-                        selectedStudentId === student.id ? "white" : "black"
-                      }
-                      fontSize="$2"
-                      fontWeight={"600"}
-                      style={{ fontFamily: "Montserrat-Regular" }}
-                    >
-                      {student.name}
-                    </Text>
-                  </Button>
-                ))}
-              </XStack>
-            </ScrollView>
-          </View>
-        )}
-
-        {filterType === "subject" && (
-          <View style={styles.pickerContainer}>
-            <Text style={styles.pickerLabel}>Selecione a Disciplina:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <XStack gap="$2" p="$2">
-                {subjects.map((subject) => (
-                  <Button
-                    key={subject.id}
-                    size="$3"
-                    bg={
-                      selectedSubjectId === subject.id ? "#4CAF50" : "#F5F5F5"
-                    }
-                    onPress={() => setSelectedSubjectId(subject.id)}
-                  >
-                    <Text
-                      color={
-                        selectedSubjectId === subject.id ? "white" : "black"
-                      }
-                      fontSize="$2"
-                      fontWeight={"600"}
-                      style={{ fontFamily: "Montserrat-Regular" }}
-                    >
-                      {subject.name}
-                    </Text>
-                  </Button>
-                ))}
-              </XStack>
-            </ScrollView>
-          </View>
-        )}
-      </View>
-
-      {loading && grades.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <Spinner size="large" color="#0960a7" />
-          <Text mt="$3">Carregando notas...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={groupedGrades}
-          keyExtractor={(item) => item.studentId}
-          renderItem={renderStudentGrades}
-          contentContainerStyle={styles.listContainer}
-          refreshing={refreshing}
-          onRefresh={loadGrades}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text
-                fontSize="$6"
-                color="#666"
-                fontWeight={"600"}
-                style={{ fontFamily: "Montserrat-Regular" }}
-              >
-                Nenhuma nota encontrada
-              </Text>
-              <Text
-                fontSize="$4"
-                color="#999"
-                mt="$2"
-                fontWeight={"600"}
-                style={{ fontFamily: "Montserrat-Regular" }}
-              >
-                Toque em {'" + Nova Nota"'} para adicionar
-              </Text>
-            </View>
-          }
-        />
-      )}
-
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <ScrollView>
-              <Text style={styles.modalTitle}>Nova Nota</Text>
-
-              <Text style={styles.label}>Aluno:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <XStack gap="$2" mb="$3">
-                  {students.map((student) => (
-                    <Button
-                      key={student.id}
-                      size="$3"
-                      bg={
-                        formData.student_id === student.id
-                          ? "#0960a7"
-                          : "#F5F5F5"
-                      }
-                      hoverStyle={{ bg: "#0960a7" }}
-                      onPress={() =>
-                        setFormData({ ...formData, student_id: student.id })
-                      }
-                    >
-                      <Text
-                        color={
-                          formData.student_id === student.id
-                            ? "white"
-                            : "#0e2b5a"
-                        }
-                        fontSize="$2"
-                        fontWeight={"600"}
-                        style={{ fontFamily: "Montserrat-Regular" }}
-                      >
-                        {student.name}
-                      </Text>
-                    </Button>
-                  ))}
-                </XStack>
-              </ScrollView>
-
-              <Text style={styles.label}>Disciplina:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <XStack gap="$2" mb="$3">
-                  {subjects.map((subject) => (
-                    <Button
-                      key={subject.id}
-                      size="$3"
-                      bg={
-                        formData.subject_id === subject.id
-                          ? "#0960a7"
-                          : "#F5F5F5"
-                      }
-                      onPress={() =>
-                        setFormData({ ...formData, subject_id: subject.id })
-                      }
-                    >
-                      <Text
-                        color={
-                          formData.subject_id === subject.id ? "white" : "black"
-                        }
-                        fontSize="$2"
-                        style={{ fontFamily: "Montserrat-Regular" }}
-                      >
-                        {subject.name}
-                      </Text>
-                    </Button>
-                  ))}
-                </XStack>
-              </ScrollView>
-
-              <Text style={styles.label}>Notas:</Text>
-              <XStack gap="$2" mb="$2">
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="Digite a nota (0-10)"
-                  keyboardType="numeric"
-                  value={scoreInput}
-                  onChangeText={setScoreInput}
-                />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} mt="$3">
+            <XStack gap="$2">
+              {students.map((student) => (
                 <Button
-                  size="$4"
-                  bg="#4CAF50"
-                  hoverStyle={{ bg: "#45a049" }}
-                  onPress={handleAddScore}
+                  key={student.id}
+                  size="$3"
+                  bg={
+                    selectedStudentId === student.id
+                      ? "#10B981"
+                      : "rgba(255,255,255,0.15)"
+                  }
+                  onPress={() => setSelectedStudentId(student.id)}
+                  rounded={10}
                 >
                   <Text
                     color="white"
+                    fontSize={13}
                     fontWeight={"600"}
-                    fontSize={"$5"}
                     style={{ fontFamily: "Montserrat-Regular" }}
                   >
-                    +
+                    {student.name}
                   </Text>
+                </Button>
+              ))}
+            </XStack>
+          </ScrollView>
+        )}
+
+        {filterType === "subject" && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} mt="$3">
+            <XStack gap="$2">
+              {subjects.map((subject) => (
+                <Button
+                  key={subject.id}
+                  size="$3"
+                  bg={
+                    selectedSubjectId === subject.id
+                      ? "#10B981"
+                      : "rgba(255,255,255,0.15)"
+                  }
+                  onPress={() => setSelectedSubjectId(subject.id)}
+                  rounded={10}
+                >
+                  <Text
+                    color="white"
+                    fontSize={13}
+                    fontWeight={"600"}
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                  >
+                    {subject.name}
+                  </Text>
+                </Button>
+              ))}
+            </XStack>
+          </ScrollView>
+        )}
+      </YStack>
+
+      <ScrollView flex={1} bg="white" pt="$4">
+        <YStack gap="$3" px="$4" pb="$6">
+          {loading ? (
+            <YStack items="center" py="$8">
+              <Spinner size="large" color="#003866" />
+              <Text
+                mt="$3"
+                color="#6B7280"
+                style={{ fontFamily: "Montserrat-Regular" }}
+              >
+                Carregando notas...
+              </Text>
+            </YStack>
+          ) : groupedGrades.length === 0 ? (
+            <YStack items="center" py="$8">
+              <Text
+                color="#6B7280"
+                fontSize={16}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              >
+                {searchQuery
+                  ? "Nenhuma nota encontrada"
+                  : "Nenhuma nota cadastrada"}
+              </Text>
+            </YStack>
+          ) : (
+            groupedGrades.map((item) => (
+              <YStack
+                key={item.studentId}
+                bg="white"
+                rounded={16}
+                p="$4"
+                shadowColor="#000"
+                shadowOffset={{ width: 0, height: 2 }}
+                shadowOpacity={0.1}
+                shadowRadius={8}
+                elevation={3}
+                borderWidth={1}
+                borderColor="#F3F4F6"
+              >
+                <XStack gap="$3" items="flex-start" mb="$3">
+                  <View
+                    width={56}
+                    height={56}
+                    rounded={28}
+                    bg="#E5E7EB"
+                    items="center"
+                    justify="center"
+                  >
+                    <Text
+                      fontSize={18}
+                      fontWeight="600"
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                      color="#6B7280"
+                    >
+                      {getInitials(item.studentName)}
+                    </Text>
+                  </View>
+
+                  <YStack flex={1}>
+                    <Text
+                      fontSize={18}
+                      fontWeight="bold"
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                      color="#111827"
+                    >
+                      {item.studentName}
+                    </Text>
+                    <Text
+                      fontSize={14}
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                      color="#6B7280"
+                    >
+                      {item.grades.length} disciplina(s)
+                    </Text>
+                  </YStack>
+                </XStack>
+
+                {item.grades.map((grade) => (
+                  <YStack
+                    key={grade.id}
+                    bg="#F9FAFB"
+                    rounded={12}
+                    p="$3"
+                    mb="$2"
+                  >
+                    <XStack justify="space-between" items="center" mb="$2">
+                      <XStack gap="$2" items="center" flex={1}>
+                        <BookOpen size={16} color="#6B7280" />
+                        <Text
+                          fontSize={15}
+                          fontWeight="600"
+                          style={{ fontFamily: "Montserrat-Regular" }}
+                          color="#374151"
+                          flex={1}
+                        >
+                          {getSubjectName(grade.subject_id)}
+                        </Text>
+                      </XStack>
+                      <View
+                        bg={getStatusInfo(grade.status).bg}
+                        px="$3"
+                        py="$1.5"
+                        rounded={12}
+                      >
+                        <Text
+                          fontSize={12}
+                          fontWeight="700"
+                          style={{ fontFamily: "Montserrat-Regular" }}
+                          color={getStatusInfo(grade.status).color}
+                        >
+                          {getStatusInfo(grade.status).text}
+                        </Text>
+                      </View>
+                    </XStack>
+
+                    <XStack gap="$2" flexWrap="wrap" items="center" mb="$2">
+                      {grade.scores.map((score, index) => (
+                        <View
+                          key={index}
+                          bg="#E3F2FD"
+                          px="$3"
+                          py="$1.5"
+                          rounded={10}
+                        >
+                          <Text
+                            fontSize={14}
+                            fontWeight="600"
+                            style={{ fontFamily: "Montserrat-Regular" }}
+                            color="#0075BE"
+                          >
+                            {score.toFixed(1)}
+                          </Text>
+                        </View>
+                      ))}
+                    </XStack>
+
+                    <XStack justify="space-between" items="center">
+                      <Text
+                        fontSize={14}
+                        fontWeight="600"
+                        style={{ fontFamily: "Montserrat-Regular" }}
+                        color="#6B7280"
+                      >
+                        Média: {grade.average.toFixed(2)}
+                      </Text>
+                      <Button
+                        onPress={() => openEditModal(grade)}
+                        bg="transparent"
+                        borderWidth={1}
+                        borderColor="#E5E7EB"
+                        color="#374151"
+                        rounded={10}
+                        height={32}
+                        px="$3"
+                      >
+                        <Text
+                          fontSize={13}
+                          fontWeight={"600"}
+                          style={{ fontFamily: "Montserrat-Regular" }}
+                        >
+                          Editar
+                        </Text>
+                      </Button>
+                    </XStack>
+                  </YStack>
+                ))}
+              </YStack>
+            ))
+          )}
+        </YStack>
+      </ScrollView>
+
+      {/* Sheet para Criar Nova Nota */}
+      <Sheet
+        forceRemoveScrollEnabled
+        open={open}
+        onOpenChange={(isOpen: any) => {
+          setOpen(isOpen);
+          if (!isOpen) resetForm();
+        }}
+        snapPoints={[90]}
+        animation="medium"
+        modal
+      >
+        <Sheet.Overlay bg="rgba(0,0,0,0.5)" />
+        <Sheet.Frame
+          bg="white"
+          borderTopLeftRadius={20}
+          borderTopRightRadius={20}
+          p="$4"
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <YStack gap="$4">
+              <XStack justify="space-between" items="center">
+                <Text
+                  fontSize={24}
+                  fontWeight="bold"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  color="#111827"
+                >
+                  {currentGrade ? "Editar Nota" : "Adicionar Nova Nota"}
+                </Text>
+                <Button
+                  onPress={() => setOpen(false)}
+                  bg="transparent"
+                  p={0}
+                  width={32}
+                  height={32}
+                  circular
+                >
+                  <X size={24} color="#6B7280" />
                 </Button>
               </XStack>
 
-              {formData.scores.length > 0 && (
-                <View style={styles.scoresListContainer}>
-                  <XStack gap="$2" flexWrap="wrap">
-                    {formData.scores.map((score, index) => (
-                      <View key={index} style={styles.scoreChipWithRemove}>
-                        <Text style={styles.scoreText}>{score.toFixed(1)}</Text>
-                        <TouchableOpacity
-                          onPress={() => handleRemoveScore(index)}
+              <YStack gap="$3">
+                <YStack gap="$2">
+                  <Text
+                    fontSize={14}
+                    fontWeight="600"
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                    color="#374151"
+                  >
+                    Aluno *
+                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                  >
+                    <XStack gap="$2">
+                      {students.map((student) => (
+                        <Button
+                          key={student.id}
+                          size="$3"
+                          bg={
+                            formData.student_id === student.id
+                              ? "#0075BE"
+                              : "#F3F4F6"
+                          }
+                          onPress={() =>
+                            setFormData({ ...formData, student_id: student.id })
+                          }
+                          rounded={10}
                         >
-                          <Text style={styles.removeScoreText}>×</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </XStack>
-                </View>
-              )}
+                          <Text
+                            color={
+                              formData.student_id === student.id
+                                ? "white"
+                                : "#374151"
+                            }
+                            fontSize={13}
+                            fontWeight={"600"}
+                            style={{ fontFamily: "Montserrat-Regular" }}
+                          >
+                            {student.name}
+                          </Text>
+                        </Button>
+                      ))}
+                    </XStack>
+                  </ScrollView>
+                </YStack>
 
-              <XStack gap="$3" mt="$4">
+                <YStack gap="$2">
+                  <Text
+                    fontSize={14}
+                    fontWeight="600"
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                    color="#374151"
+                  >
+                    Disciplina *
+                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                  >
+                    <XStack gap="$2">
+                      {subjects.map((subject) => (
+                        <Button
+                          key={subject.id}
+                          size="$3"
+                          bg={
+                            formData.subject_id === subject.id
+                              ? "#0075BE"
+                              : "#F3F4F6"
+                          }
+                          onPress={() =>
+                            setFormData({
+                              ...formData,
+                              subject_id: subject.id,
+                            })
+                          }
+                          rounded={10}
+                        >
+                          <Text
+                            color={
+                              formData.subject_id === subject.id
+                                ? "white"
+                                : "#374151"
+                            }
+                            fontSize={13}
+                            fontWeight={"600"}
+                            style={{ fontFamily: "Montserrat-Regular" }}
+                          >
+                            {subject.name}
+                          </Text>
+                        </Button>
+                      ))}
+                    </XStack>
+                  </ScrollView>
+                </YStack>
+
+                <YStack gap="$2">
+                  <Text
+                    fontSize={14}
+                    fontWeight="600"
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                    color="#374151"
+                  >
+                    Notas (0-10) *
+                  </Text>
+                  <XStack gap="$2">
+                    <Input
+                      flex={1}
+                      placeholder="Digite a nota"
+                      value={scoreInput}
+                      onChangeText={setScoreInput}
+                      keyboardType="numeric"
+                      bg="#F3F4F6"
+                      borderWidth={1}
+                      borderColor="#E5E7EB"
+                      rounded={12}
+                      p="$3"
+                      fontSize={16}
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                    />
+                    <Button
+                      onPress={handleAddScore}
+                      bg="#10B981"
+                      rounded={12}
+                      width={52}
+                      height={52}
+                    >
+                      <Plus size={20} color="white" />
+                    </Button>
+                  </XStack>
+
+                  {formData.scores.length > 0 && (
+                    <YStack bg="#F9FAFB" rounded={12} p="$3" gap="$2">
+                      <XStack gap="$2" flexWrap="wrap">
+                        {formData.scores.map((score, index) => (
+                          <XStack
+                            key={index}
+                            bg="#E3F2FD"
+                            px="$3"
+                            py="$2"
+                            rounded={10}
+                            gap="$2"
+                            items="center"
+                          >
+                            <Text
+                              fontSize={14}
+                              fontWeight="600"
+                              style={{ fontFamily: "Montserrat-Regular" }}
+                              color="#0075BE"
+                            >
+                              {score.toFixed(1)}
+                            </Text>
+                            <Button
+                              onPress={() => handleRemoveScore(index)}
+                              bg="transparent"
+                              p={0}
+                              width={20}
+                              height={20}
+                            >
+                              <X size={16} color="#EF4444" />
+                            </Button>
+                          </XStack>
+                        ))}
+                      </XStack>
+                    </YStack>
+                  )}
+                </YStack>
+              </YStack>
+
+              <YStack gap="$3" mt="$2">
                 <Button
-                  flex={1}
-                  size="$4"
-                  bg="#E0E0E0"
-                  onPress={() => {
-                    setModalVisible(false);
-                    resetForm();
-                  }}
+                  onPress={handleCreateGrade}
+                  bg="#0075BE"
+                  color="white"
+                  rounded={12}
+                  height={52}
+                  fontSize={16}
+                  fontWeight="600"
+                  disabled={loading}
+                  hoverStyle={{ bg: "#0e2b5a" }}
                 >
                   <Text
-                    color="black"
-                    fontWeight={"600"}
+                    color="#fff"
                     style={{ fontFamily: "Montserrat-Regular" }}
                   >
+                    {loading ? "Salvando..." : "Criar Nota"}
+                  </Text>
+                </Button>
+
+                <Button
+                  onPress={() => setOpen(false)}
+                  bg="transparent"
+                  borderWidth={1}
+                  borderColor="#E5E7EB"
+                  color="#374151"
+                  rounded={12}
+                  height={52}
+                  fontSize={16}
+                  fontWeight="600"
+                >
+                  <Text style={{ fontFamily: "Montserrat-Regular" }}>
                     Cancelar
                   </Text>
                 </Button>
-                <Button
-                  flex={1}
-                  size="$4"
-                  bg="#0960a7"
-                  hoverStyle={{ bg: "#0e2b5a" }}
-                  onPress={handleCreateGrade}
-                  disabled={loading}
+              </YStack>
+            </YStack>
+          </ScrollView>
+        </Sheet.Frame>
+      </Sheet>
+
+      {/* Sheet para Editar Notas */}
+      <Sheet
+        forceRemoveScrollEnabled
+        open={editOpen}
+        onOpenChange={(isOpen: any) => {
+          setEditOpen(isOpen);
+          if (!isOpen) {
+            setEditAllScoresData([]);
+            setCurrentGrade(null);
+          }
+        }}
+        snapPoints={[90]}
+        animation="medium"
+        modal
+      >
+        <Sheet.Overlay bg="rgba(0,0,0,0.5)" />
+        <Sheet.Frame
+          bg="white"
+          borderTopLeftRadius={20}
+          borderTopRightRadius={20}
+          p="$4"
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <YStack gap="$4">
+              <XStack justify="space-between" items="center">
+                <Text
+                  fontSize={24}
+                  fontWeight="bold"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  color="#111827"
                 >
-                  {loading ? (
-                    <Spinner color="white" />
-                  ) : (
-                    <Text
-                      color="white"
-                      fontWeight={"600"}
-                      style={{ fontFamily: "Montserrat-Regular" }}
-                    >
-                      Criar
-                    </Text>
-                  )}
+                  Editar Notas
+                </Text>
+                <Button
+                  onPress={() => setEditOpen(false)}
+                  bg="transparent"
+                  p={0}
+                  width={32}
+                  height={32}
+                  circular
+                >
+                  <X size={24} color="#6B7280" />
                 </Button>
               </XStack>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
 
-      <Modal
-        visible={editModalVisible}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.smallModalContent}>
-            <Text style={styles.modalTitle}>Editar Nota</Text>
-            <Text style={styles.label}>
-              Nota {editScoreIndex !== null ? editScoreIndex + 1 : ""}:
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite a nova nota (0-10)"
-              keyboardType="numeric"
-              value={editScoreValue}
-              onChangeText={setEditScoreValue}
-            />
-            <XStack gap="$3" mt="$4">
-              <Button
-                flex={1}
-                size="$4"
-                bg="#E0E0E0"
-                onPress={() => {
-                  setEditModalVisible(false);
-                  setEditScoreIndex(null);
-                  setEditScoreValue("");
-                }}
-              >
-                <Text color="black">Cancelar</Text>
-              </Button>
-              <Button
-                flex={1}
-                size="$4"
-                bg="#0960a7"
-                onPress={handleEditScore}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Spinner color="white" />
-                ) : (
-                  <Text color="white" fontWeight="bold">
-                    Salvar
-                  </Text>
-                )}
-              </Button>
-            </XStack>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={addScoreModalVisible}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setAddScoreModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.smallModalContent}>
-            <Text style={styles.modalTitle}>Adicionar Nota</Text>
-            {currentGrade && (
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
-                  Aluno: {getStudentName(currentGrade.student_id)}
-                </Text>
-                <Text style={{ fontSize: 14, color: "#666" }}>
-                  Disciplina: {getSubjectName(currentGrade.subject_id)}
-                </Text>
-              </View>
-            )}
-            <Text style={styles.label}>Nova Nota (0-10):</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite a nota"
-              keyboardType="numeric"
-              value={addScoreValue}
-              onChangeText={setAddScoreValue}
-              autoFocus
-            />
-            <XStack gap="$3" mt="$4">
-              <Button
-                flex={1}
-                size="$4"
-                bg="#E0E0E0"
-                onPress={() => {
-                  setAddScoreModalVisible(false);
-                  setAddScoreValue("");
-                  setCurrentGrade(null);
-                }}
-              >
-                <Text color="black">Cancelar</Text>
-              </Button>
-              <Button
-                flex={1}
-                size="$4"
-                bg="#4CAF50"
-                onPress={confirmAddScore}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Spinner color="white" />
-                ) : (
-                  <Text color="white" fontWeight="bold">
-                    Adicionar
-                  </Text>
-                )}
-              </Button>
-            </XStack>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={editAllScoresModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setEditAllScoresModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitle}>Editar Notas</Text>
               {currentGrade && (
-                <View style={{ marginBottom: 16 }}>
-                  <Text
-                    style={{ fontSize: 14, color: "#666", marginBottom: 4 }}
-                  >
-                    Aluno: {getStudentName(currentGrade.student_id)}
-                  </Text>
-                  <Text style={{ fontSize: 14, color: "#666" }}>
-                    Disciplina: {getSubjectName(currentGrade.subject_id)}
-                  </Text>
-                </View>
+                <YStack bg="#F9FAFB" rounded={12} p="$3" gap="$1">
+                  <XStack gap="$2" items="center">
+                    <GraduationCap size={16} color="#6B7280" />
+                    <Text
+                      fontSize={14}
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                      color="#6B7280"
+                    >
+                      Aluno: {getStudentName(currentGrade.student_id)}
+                    </Text>
+                  </XStack>
+                  <XStack gap="$2" items="center">
+                    <BookOpen size={16} color="#6B7280" />
+                    <Text
+                      fontSize={14}
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                      color="#6B7280"
+                    >
+                      Disciplina: {getSubjectName(currentGrade.subject_id)}
+                    </Text>
+                  </XStack>
+                </YStack>
               )}
 
-              <Text style={styles.label}>Notas (0-10):</Text>
-              {editAllScoresData.map((score, index) => (
-                <XStack key={index} gap="$2" mb="$2" items="center">
-                  <Text style={{ width: 60, fontSize: 14, fontWeight: "600" }}>
-                    Nota {index + 1}:
-                  </Text>
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
-                    placeholder="0.0"
-                    keyboardType="numeric"
-                    value={score.toString()}
-                    onChangeText={(value) =>
-                      handleUpdateScoreInList(index, value)
-                    }
-                  />
-                  <TouchableOpacity
-                    onPress={() => handleRemoveScoreFromList(index)}
-                    style={styles.removeButton}
-                  >
+              <YStack gap="$3">
+                <Text
+                  fontSize={14}
+                  fontWeight="600"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  color="#374151"
+                >
+                  Notas (0-10)
+                </Text>
+                {editAllScoresData.map((score, index) => (
+                  <XStack key={index} gap="$2" items="center">
                     <Text
-                      style={{
-                        color: "#F44336",
-                        fontSize: 20,
-                        fontWeight: "bold",
-                      }}
+                      width={70}
+                      fontSize={14}
+                      fontWeight="600"
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                      color="#6B7280"
                     >
-                      ×
+                      Nota {index + 1}:
                     </Text>
-                  </TouchableOpacity>
-                </XStack>
-              ))}
+                    <Input
+                      flex={1}
+                      placeholder="0.0"
+                      value={score.toString()}
+                      onChangeText={(value) =>
+                        handleUpdateScoreInList(index, value)
+                      }
+                      keyboardType="numeric"
+                      bg="#F3F4F6"
+                      borderWidth={1}
+                      borderColor="#E5E7EB"
+                      rounded={12}
+                      p="$3"
+                      fontSize={16}
+                      style={{ fontFamily: "Montserrat-Regular" }}
+                    />
+                    <Button
+                      onPress={() => handleRemoveScoreFromList(index)}
+                      bg="#FEE2E2"
+                      rounded={10}
+                      width={44}
+                      height={44}
+                    >
+                      <X size={20} color="#EF4444" />
+                    </Button>
+                  </XStack>
+                ))}
 
-              <Button
-                size="$3"
-                bg="#4CAF50"
-                onPress={handleAddScoreToList}
-                mt="$2"
-                mb="$3"
-              >
-                <Text color="white">+ Adicionar Nota</Text>
-              </Button>
-
-              <XStack gap="$3" mt="$4">
                 <Button
-                  flex={1}
-                  size="$4"
-                  bg="#E0E0E0"
-                  onPress={() => {
-                    setEditAllScoresModalVisible(false);
-                    setEditAllScoresData([]);
-                    setCurrentGrade(null);
-                  }}
+                  onPress={handleAddScoreToList}
+                  bg="#10B981"
+                  rounded={12}
+                  height={44}
+                  icon={<Plus size={18} color="white" />}
                 >
-                  <Text color="black">Cancelar</Text>
+                  <Text
+                    color="white"
+                    fontWeight="600"
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                  >
+                    Adicionar Nota
+                  </Text>
                 </Button>
+              </YStack>
+
+              <YStack gap="$3" mt="$2">
                 <Button
-                  flex={1}
-                  size="$4"
-                  bg="#0960a7"
                   onPress={handleSaveAllScores}
+                  bg="#0075BE"
+                  color="white"
+                  rounded={12}
+                  height={52}
+                  fontSize={16}
+                  fontWeight="600"
                   disabled={loading}
+                  hoverStyle={{ bg: "#0e2b5a" }}
                 >
-                  {loading ? (
-                    <Spinner color="white" />
-                  ) : (
-                    <Text color="white" fontWeight="bold">
-                      Salvar
-                    </Text>
-                  )}
+                  <Text
+                    color="#fff"
+                    style={{ fontFamily: "Montserrat-Regular" }}
+                  >
+                    {loading ? "Salvando..." : "Salvar Alterações"}
+                  </Text>
                 </Button>
-              </XStack>
-            </ScrollView>
-          </View>
+
+                <Button
+                  onPress={() => setEditOpen(false)}
+                  bg="transparent"
+                  borderWidth={1}
+                  borderColor="#E5E7EB"
+                  color="#374151"
+                  rounded={12}
+                  height={52}
+                  fontSize={16}
+                  fontWeight="600"
+                >
+                  <Text style={{ fontFamily: "Montserrat-Regular" }}>
+                    Cancelar
+                  </Text>
+                </Button>
+              </YStack>
+            </YStack>
+          </ScrollView>
+        </Sheet.Frame>
+      </Sheet>
+
+      {/* Alerta Customizado */}
+      {showAlert && (
+        <View
+          position="absolute"
+          top={60}
+          left={0}
+          right={0}
+          zIndex={9999}
+          px="$4"
+          animation="quick"
+          enterStyle={{ opacity: 0, y: -20 }}
+          exitStyle={{ opacity: 0, y: -20 }}
+        >
+          <YStack
+            bg="#FEF3C7"
+            rounded={16}
+            p="$4"
+            shadowColor="#000"
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.15}
+            shadowRadius={12}
+            elevation={5}
+            borderWidth={1}
+            borderColor="#F59E0B"
+          >
+            <XStack gap="$3" items="center">
+              <View
+                width={40}
+                height={40}
+                rounded={20}
+                bg="#F59E0B"
+                items="center"
+                justify="center"
+              >
+                <Text fontSize={20}>⚠️</Text>
+              </View>
+              <YStack flex={1}>
+                <Text
+                  fontSize={16}
+                  fontWeight="700"
+                  color="#92400E"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                  mb="$1"
+                >
+                  Nota já cadastrada
+                </Text>
+                <Text
+                  fontSize={14}
+                  color="#78350F"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {alertMessage}
+                </Text>
+              </YStack>
+            </XStack>
+          </YStack>
         </View>
-      </Modal>
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    fontFamily: "Montserrat-Regular",
-  },
-  filterContainer: {
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  pickerContainer: {
-    padding: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-  },
-  pickerLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
-    paddingHorizontal: 8,
-    marginBottom: 4,
-    fontFamily: "Montserrat-Regular",
-  },
-  listContainer: {
-    padding: 16,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  subjectContainer: {
-    paddingTop: 14,
-    marginTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-  },
-  studentName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#0960a7",
-    marginBottom: 14,
-    fontFamily: "Montserrat-Regular",
-  },
-  subjectName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    fontFamily: "Montserrat-Regular",
-  },
-  editButton: {
-    backgroundColor: "#0960a7",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  editButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-    fontFamily: "Montserrat-Regular",
-  },
-  removeButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FEE2E2",
-    borderRadius: 8,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    padding: 5,
-    paddingLeft: 10,
-    paddingRight: 10,
-    gap: 6,
-  },
-  statusIcon: {
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    fontFamily: "Montserrat-Regular",
-  },
-  scoreChip: {
-    backgroundColor: "#E3F2FD",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    marginRight: 8,
-    marginBottom: 6,
-    fontFamily: "Montserrat-Regular",
-  },
-  scoreText: {
-    color: "#0960a7",
-    fontSize: 14,
-    fontWeight: "600",
-    fontFamily: "Montserrat-Regular",
-  },
-  averageText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
-    marginLeft: 6,
-    fontFamily: "Montserrat-Regular",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 24,
-    width: "90%",
-    maxHeight: "80%",
-  },
-  smallModalContent: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 24,
-    width: "80%",
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0960a7",
-    marginBottom: 20,
-    fontFamily: "Montserrat-Regular",
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-    fontFamily: "Montserrat-Regular",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#F5F5F5",
-    fontFamily: "Montserrat-Regular",
-  },
-  scoresListContainer: {
-    backgroundColor: "#F5F5F5",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-    fontFamily: "Montserrat-Regular",
-  },
-  scoreChipWithRemove: {
-    backgroundColor: "#E3F2FD",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingLeft: 12,
-    paddingRight: 8,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  removeScoreText: {
-    color: "#F44336",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginLeft: 8,
-    fontFamily: "Montserrat-Regular",
-  },
-});
