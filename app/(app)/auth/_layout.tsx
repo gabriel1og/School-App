@@ -1,14 +1,28 @@
-import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { Redirect, Slot } from 'expo-router';
-import { useAuth } from '@/src/hooks/useAuth';
+import HeaderMenu from "@/components/common/header-menu";
+import { useAuth } from "@/src/hooks/useAuth";
+import { Redirect, Slot, useNavigation } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 export default function AuthLayout() {
   const { isAuthenticated, loading } = useAuth();
 
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "white",
+        }}
+      >
         <ActivityIndicator />
       </View>
     );
@@ -18,5 +32,10 @@ export default function AuthLayout() {
     return <Redirect href="/(app)/(tabs)" />;
   }
 
-  return <Slot />;
+  return (
+    <>
+      <HeaderMenu isAtAuthPage={true} />
+      <Slot screenOptions={{ headerShown: false }} />
+    </>
+  );
 }

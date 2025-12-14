@@ -9,7 +9,7 @@ interface MainStructureProps {
 export default function MainStructure({ children }: MainStructureProps) {
   return (
     <YStack flex={1} height="100%" position="relative">
-      <HeaderMenu />
+      <HeaderMenu isAtAuthPage={false} />
 
       <YStack bg="#ffffff" height="80%" p="$4">
         {children}

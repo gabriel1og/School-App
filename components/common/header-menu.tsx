@@ -4,7 +4,12 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Avatar, Text, XStack } from "tamagui";
 import logo from "../../assets/images/logo.jpg";
-export default function HeaderMenu() {
+
+export default function HeaderMenu({
+  isAtAuthPage = false,
+}: {
+  isAtAuthPage?: boolean;
+}) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
@@ -18,15 +23,6 @@ export default function HeaderMenu() {
 
   const handleNavigation = (route: any) => {
     router.push(route);
-  };
-
-  const getUserInitials = () => {
-    if (!user?.name) return "GG";
-    const nameParts = user.name.trim().split(" ");
-    if (nameParts.length === 1) {
-      return nameParts[0].substring(0, 2).toUpperCase();
-    }
-    return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
   };
 
   return (
@@ -50,14 +46,37 @@ export default function HeaderMenu() {
         </Avatar>
       </XStack>
 
-      <XStack items="center" p="$3" cursor="pointer">
-        <Text fontWeight={"600"} fontSize={"$5"} color={"#003866"}>
+      <XStack
+        items="center"
+        p="$3"
+        cursor="pointer"
+        style={{
+          visibility: isAtAuthPage ? "hidden" : "visible",
+        }}
+      >
+        <Text
+          fontWeight={"500"}
+          fontSize={"$5"}
+          style={{ fontFamily: "Montserrat-Regular" }}
+          color={"#003866"}
+        >
           Seja bem-vindo,
         </Text>
-        <Text fontWeight={"700"} fontSize={"$5"} color={"#003866"}>
+        <Text
+          fontWeight={"700"}
+          fontSize={"$5"}
+          style={{ fontFamily: "Montserrat-Regular" }}
+          color={"#003866"}
+        >
           {user?.name ? ` ${user.name}` : " Caro Usuário"}
         </Text>
-        <Text pl="$0.5" fontWeight={"700"} fontSize={"$5"} color={"#003866"}>
+        <Text
+          pl="$0.5"
+          fontWeight={"700"}
+          fontSize={"$5"}
+          style={{ fontFamily: "Montserrat-Regular" }}
+          color={"#003866"}
+        >
           !
         </Text>
       </XStack>
