@@ -1,8 +1,9 @@
 import { useAuth } from "@/src/hooks/useAuth";
 import { teacherService } from "@/src/services/teacher.service";
 import type { Teacher } from "@/src/types/teacher.types";
+import { Plus, Search, X } from "@tamagui/lucide-icons";
 import { Redirect } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 import {
   Button,
@@ -21,6 +22,8 @@ export default function ProfessoresScreen() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
+  const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // form
   const [name, setName] = useState("");
@@ -30,9 +33,15 @@ export default function ProfessoresScreen() {
   const [address, setAddress] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    loadTeachers();
-  }, []);
+  const resetForm = () => {
+    setEditingTeacher(null);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setPasswordConfirmation("");
+    setAddress("");
+    setErrors({});
+  };
 
   const loadTeachers = async () => {
     try {
@@ -42,6 +51,42 @@ export default function ProfessoresScreen() {
       console.error("Erro ao buscar professores:", e);
     }
   };
+
+  const filterTeachers = useCallback(() => {
+    if (!searchQuery.trim()) {
+      setFilteredTeachers(teachers);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = teachers.filter(
+      (teacher) =>
+        teacher.name.toLowerCase().includes(query) ||
+        teacher.email.toLowerCase().includes(query)
+    );
+    setFilteredTeachers(filtered);
+  }, [searchQuery, teachers]);
+
+  const openAddModal = () => {
+    setEditingTeacher(null);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setPasswordConfirmation("");
+    setAddress("");
+    setErrors({});
+    resetForm();
+    setOpen(true);
+  };
+
+  // Carregar professores ao abrir tela
+  useEffect(() => {
+    loadTeachers();
+  }, []);
+
+  useEffect(() => {
+    filterTeachers();
+  }, [filterTeachers]);
 
   const isEditing = useMemo(() => !!editingTeacher, [editingTeacher]);
 
@@ -116,17 +161,6 @@ export default function ProfessoresScreen() {
     }
   };
 
-  const startCreate = () => {
-    setEditingTeacher(null);
-    setName("");
-    setEmail("");
-    setPassword("");
-    setPasswordConfirmation("");
-    setAddress("");
-    setErrors({});
-    setOpen(true);
-  };
-
   const startEdit = (t: Teacher) => {
     setEditingTeacher(t);
     setName(t.name || "");
@@ -168,36 +202,85 @@ export default function ProfessoresScreen() {
 
   return (
     <View flex={1} background="white" p="$4">
-      <XStack justify="space-between" items="center" mb="$4">
-        <Text
-          fontSize="$8"
-          fontWeight="bold"
-          color="#0960a7"
-          style={{ fontFamily: "Montserrat-Regular" }}
-        >
-          Professores
-        </Text>
-        <Button onPress={startCreate}>
-          <Text fontWeight={"600"} style={{ fontFamily: "Montserrat-Regular" }}>
-            Novo
-          </Text>
-        </Button>
-      </XStack>
+      <YStack p="$4" bg="#003866" rounded={15}>
+        <XStack justify="space-between" items="center" mb="$6">
+          <YStack>
+            <Text
+              fontSize={28}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              fontWeight="bold"
+              color="white"
+            >
+              Professores
+            </Text>
+            <Text
+              fontSize={14}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              color="rgba(255,255,255,0.8)"
+            >
+              {teachers.length}{" "}
+              {teachers.length === 1
+                ? "professor cadastrado"
+                : "professores cadastrados"}
+            </Text>
+          </YStack>
+          <Button
+            onPress={openAddModal}
+            bg="white"
+            color="#003866"
+            rounded={15}
+            p="$4"
+            height={44}
+            icon={<Plus size={18} color="#003866" />}
+          >
+            <Text
+              color="#003866"
+              fontWeight={"600"}
+              style={{ fontFamily: "Montserrat-Regular" }}
+            >
+              Criar
+            </Text>
+          </Button>
+        </XStack>
 
-      <ScrollView>
-        <YStack gap="$3">
-          {teachers.map((t) => (
+        <XStack
+          bg="rgba(255,255,255,0.2)"
+          rounded={15}
+          px="$4"
+          py="$2"
+          items="center"
+          gap="$2"
+        >
+          <Search size={20} color="rgba(255,255,255,0.7)" />
+          <Input
+            flex={1}
+            placeholder="Buscar professores..."
+            placeholderTextColor="rgba(255,255,255,0.7)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            bg="transparent"
+            borderWidth={0}
+            color="white"
+            fontSize={16}
+            style={{ fontFamily: "Montserrat-Regular" }}
+          />
+        </XStack>
+      </YStack>
+
+      <ScrollView flex={1} bg="white" pt="$4">
+        <YStack gap="$3" px="$4" pb="$6">
+          {filteredTeachers.map((t) => (
             <YStack
               key={t.id}
-              p="$3"
               background="#fff"
-              borderWidth={1}
-              borderColor="#F3F4F6"
-              style={{ borderRadius: 12 }}
+              p="$4"
+              rounded={16}
               shadowColor="#000"
               shadowOffset={{ width: 0, height: 2 }}
               shadowOpacity={0.05}
               shadowRadius={8}
+              borderWidth={1}
+              borderColor="#F3F4F6"
             >
               <Text
                 fontSize="$6"
@@ -213,8 +296,8 @@ export default function ProfessoresScreen() {
               >
                 {t.email}
               </Text>
-              <XStack gap="$2" mt="$2">
-                <Button size="$2" onPress={() => startEdit(t)}>
+              <XStack gap="$2" mt="$3">
+                <Button width={"50%"} onPress={() => startEdit(t)}>
                   <Text
                     fontWeight={"600"}
                     style={{ fontFamily: "Montserrat-Regular" }}
@@ -222,34 +305,80 @@ export default function ProfessoresScreen() {
                     Editar
                   </Text>
                 </Button>
-                <Button size="$2" theme="red" onPress={() => confirmDelete(t)}>
+                <Button
+                  width={"50%"}
+                  theme="red"
+                  onPress={() => confirmDelete(t)}
+                >
                   <Text
                     fontWeight={"600"}
                     style={{ fontFamily: "Montserrat-Regular" }}
                   >
-                    Excluir
+                    Deletar
                   </Text>
                 </Button>
               </XStack>
             </YStack>
           ))}
-          {teachers.length === 0 && (
-            <Text color="#6B7280">Nenhum professor encontrado.</Text>
+          {filteredTeachers.length === 0 && (
+            <YStack items="center" py="$8">
+              <Text
+                color="#6B7280"
+                fontSize={16}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              >
+                {searchQuery
+                  ? "Nenhum professor encontrado"
+                  : "O professor digitado não foi encontrado "}
+              </Text>
+            </YStack>
           )}
         </YStack>
       </ScrollView>
 
-      <Sheet modal open={open} onOpenChange={setOpen} snapPoints={[85]}>
+      <Sheet
+        forceRemoveScrollEnabled
+        open={open}
+        onOpenChange={(val: any) => {
+          setOpen(val);
+          if (!val) resetForm();
+        }}
+        snapPoints={[90]}
+        animation="medium"
+        modal
+      >
         <Sheet.Frame p="$4" background="#fff">
           <YStack gap="$3">
-            <Text
-              fontSize="$7"
-              fontWeight="700"
-              style={{ fontFamily: "Montserrat-Regular" }}
-            >
-              {isEditing ? "Editar Professor" : "Cadastro de Professor"}
-            </Text>
-            <YStack>
+            <XStack justify="space-between" items="center">
+              <Text
+                fontSize={24}
+                fontWeight="bold"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#111827"
+              >
+                {editingTeacher ? "Editar Professor" : "Cadastro de Professor"}
+              </Text>
+              <Button
+                onPress={() => setOpen(false)}
+                bg="transparent"
+                p={0}
+                width={32}
+                height={32}
+                circular
+              >
+                <X size={24} color="#6B7280" />
+              </Button>
+            </XStack>
+
+            <YStack gap="$2">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
+              >
+                Nome *
+              </Text>
               <Input
                 placeholder="Nome"
                 value={name}
@@ -266,7 +395,15 @@ export default function ProfessoresScreen() {
               )}
             </YStack>
 
-            <YStack>
+            <YStack gap="$2">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
+              >
+                E-mail *
+              </Text>
               <Input
                 placeholder="E-mail"
                 value={email}
@@ -285,7 +422,15 @@ export default function ProfessoresScreen() {
               )}
             </YStack>
 
-            <YStack>
+            <YStack gap="$2">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
+              >
+                Senha *
+              </Text>
               <Input
                 placeholder="Senha"
                 value={password}
@@ -304,7 +449,15 @@ export default function ProfessoresScreen() {
               )}
             </YStack>
 
-            <YStack>
+            <YStack gap="$2">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
+              >
+                Confirmação de Senha *
+              </Text>
               <Input
                 placeholder="Confirmar senha"
                 value={passwordConfirmation}
@@ -323,7 +476,15 @@ export default function ProfessoresScreen() {
               )}
             </YStack>
 
-            <YStack>
+            <YStack gap="$2">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
+              >
+                Endereço *
+              </Text>
               <Input
                 placeholder="Endereço"
                 value={address}
@@ -340,24 +501,45 @@ export default function ProfessoresScreen() {
               )}
             </YStack>
 
-            <XStack gap="$2" mt="$2">
-              <Button flex={1} onPress={() => setOpen(false)} disabled={saving}>
+            <YStack gap="$3" mt="$2">
+              <Button
+                onPress={saveTeacher}
+                bg="#0075BE"
+                rounded={12}
+                height={52}
+                fontSize={16}
+                fontWeight="600"
+                disabled={saving}
+                hoverStyle={{ bg: "#0e2b5a" }}
+              >
                 <Text
-                  fontWeight={"600"}
-                  style={{ fontFamily: "Montserrat-Regular" }}
-                >
-                  Cancelar
-                </Text>
-              </Button>
-              <Button flex={1} onPress={saveTeacher} disabled={saving}>
-                <Text
+                  color="white"
                   fontWeight={"600"}
                   style={{ fontFamily: "Montserrat-Regular" }}
                 >
                   {saving ? "Salvando..." : "Salvar"}
                 </Text>
               </Button>
-            </XStack>
+              <Button
+                onPress={() => setOpen(false)}
+                bg="transparent"
+                borderWidth={1}
+                borderColor="#E5E7EB"
+                rounded={12}
+                height={52}
+                fontSize={16}
+                fontWeight="600"
+                disabled={saving}
+              >
+                <Text
+                  color="#374151"
+                  fontWeight={"600"}
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  Cancelar
+                </Text>
+              </Button>
+            </YStack>
           </YStack>
         </Sheet.Frame>
       </Sheet>

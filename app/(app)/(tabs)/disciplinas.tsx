@@ -3,7 +3,8 @@ import { subjectService } from "@/src/services/subject.service";
 import { teacherService } from "@/src/services/teacher.service";
 import { CreateSubjectData, Subject } from "@/src/types/subject.types";
 import type { Teacher } from "@/src/types/teacher.types";
-import { useEffect, useState } from "react";
+import { Plus, Search, X } from "@tamagui/lucide-icons";
+import { useCallback, useEffect, useState } from "react";
 import { TouchableOpacity } from "react-native";
 import {
   Button,
@@ -21,6 +22,9 @@ export default function DisciplinasScreen() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const isAdmin = user?.user_type === "admin";
   const isTeacher = user?.user_type === "teacher";
 
@@ -87,10 +91,50 @@ export default function DisciplinasScreen() {
     setAlertVisible(true);
   };
 
+  const filterSubjects = useCallback(() => {
+    if (!searchQuery.trim()) {
+      setFilteredSubjects(subjects);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = subjects.filter(
+      (subject) =>
+        subject.name.toLowerCase().includes(query) ||
+        subject.code.toLowerCase().includes(query)
+    );
+    setFilteredSubjects(filtered);
+  }, [searchQuery, subjects]);
+
+  const loadSubjects = async () => {
+    try {
+      const data = await subjectService.getAll();
+      setSubjects(data);
+    } catch (error) {
+      console.error("Erro ao buscar disciplinas:", error);
+    }
+  };
+
+  const openAddModal = () => {
+    setEditingSubjectId(null);
+    setName("");
+    setCode("");
+    setNumberOfGrades("");
+    setPassingAverage("");
+    setRecoveryAverage("");
+    setTeacherId("");
+    resetForm();
+    setOpen(true);
+  };
+
   // Carregar disciplinas ao abrir tela
   useEffect(() => {
     loadSubjects();
   }, []);
+
+  useEffect(() => {
+    filterSubjects();
+  }, [filterSubjects]);
 
   // Carregar professores quando admin abrir o modal
   useEffect(() => {
@@ -114,15 +158,6 @@ export default function DisciplinasScreen() {
       loadTeachers();
     }
   }, [open, isAdmin]);
-
-  const loadSubjects = async () => {
-    try {
-      const data = await subjectService.getAll();
-      setSubjects(data);
-    } catch (error) {
-      console.error("Erro ao buscar disciplinas:", error);
-    }
-  };
 
   const saveSubject = async () => {
     // validação
@@ -213,42 +248,86 @@ export default function DisciplinasScreen() {
 
   return (
     <View flex={1} background="white" p="$4">
-      <XStack justify="space-between" items="center" mb="$4">
-        <Text
-          fontSize="$8"
-          fontWeight="bold"
-          color="#0960a7"
-          style={{ fontFamily: "Montserrat-Regular" }}
+      <YStack p="$4" bg="#003866" rounded={15}>
+        <XStack justify="space-between" items="center" mb="$6">
+          <YStack>
+            <Text
+              fontSize={28}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              fontWeight="bold"
+              color="white"
+            >
+              Disciplinas
+            </Text>
+            <Text
+              fontSize={14}
+              style={{ fontFamily: "Montserrat-Regular" }}
+              color="rgba(255,255,255,0.8)"
+            >
+              {subjects.length}{" "}
+              {subjects.length === 1
+                ? "disciplina cadastrada"
+                : "disciplinas cadastradas"}
+            </Text>
+          </YStack>
+          <Button
+            onPress={openAddModal}
+            bg="white"
+            color="#003866"
+            rounded={15}
+            p="$4"
+            height={44}
+            icon={<Plus size={18} color="#003866" />}
+          >
+            <Text
+              color="#003866"
+              fontWeight={"600"}
+              style={{ fontFamily: "Montserrat-Regular" }}
+            >
+              Criar
+            </Text>
+          </Button>
+        </XStack>
+
+        <XStack
+          bg="rgba(255,255,255,0.2)"
+          rounded={15}
+          px="$4"
+          py="$2"
+          items="center"
+          gap="$2"
         >
-          Disciplinas
-        </Text>
-        <Button
-          onPress={() => {
-            resetForm();
-            setOpen(true);
-          }}
-        >
-          <Text fontWeight="600" style={{ fontFamily: "Montserrat-Regular" }}>
-            Nova
-          </Text>
-        </Button>
-      </XStack>
+          <Search size={20} color="rgba(255,255,255,0.7)" />
+          <Input
+            flex={1}
+            placeholder="Buscar disciplinas..."
+            placeholderTextColor="rgba(255,255,255,0.7)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            bg="transparent"
+            borderWidth={0}
+            color="white"
+            fontSize={16}
+            style={{ fontFamily: "Montserrat-Regular" }}
+          />
+        </XStack>
+      </YStack>
 
       {/* Lista */}
-      <ScrollView>
-        <YStack gap="$3">
-          {subjects.map((subj) => (
+      <ScrollView flex={1} bg="white" pt="$4">
+        <YStack gap="$3" px="$4" pb="$6">
+          {filteredSubjects.map((subj) => (
             <YStack
               key={subj.id}
-              p="$3"
               background="#fff"
-              borderWidth={1}
-              borderColor="#F3F4F6"
-              style={{ borderRadius: 12 }}
+              p="$4"
+              rounded={16}
               shadowColor="#000"
               shadowOffset={{ width: 0, height: 2 }}
               shadowOpacity={0.05}
               shadowRadius={8}
+              borderWidth={1}
+              borderColor="#F3F4F6"
             >
               <Text
                 fontSize="$6"
@@ -260,24 +339,34 @@ export default function DisciplinasScreen() {
               </Text>
               <Text
                 color="#6B7280"
+                mt="$2"
                 style={{ fontFamily: "Montserrat-Regular" }}
               >
-                {subj.code}
+                Código: {subj.code}
               </Text>
               <Text
                 color="#6B7280"
+                mt="$1"
                 style={{ fontFamily: "Montserrat-Regular" }}
               >
                 Notas: {subj.number_of_grades} · Média: {subj.passing_average}
               </Text>
 
-              <XStack mt="$2" gap="$2">
-                <Button theme="accent" onPress={() => handleEdit(subj)}>
+              <XStack mt="$3" gap="$2">
+                <Button
+                  width={"50%"}
+                  theme="accent"
+                  onPress={() => handleEdit(subj)}
+                >
                   <Text style={{ fontFamily: "Montserrat-Regular" }}>
                     Editar
                   </Text>
                 </Button>
-                <Button theme="red" onPress={() => handleDelete(subj.id)}>
+                <Button
+                  width={"50%"}
+                  theme="red"
+                  onPress={() => handleDelete(subj.id)}
+                >
                   <Text style={{ fontFamily: "Montserrat-Regular" }}>
                     Deletar
                   </Text>
@@ -285,140 +374,214 @@ export default function DisciplinasScreen() {
               </XStack>
             </YStack>
           ))}
-          {subjects.length === 0 && (
-            <Text color="#6B7280" style={{ fontFamily: "Montserrat-Regular" }}>
-              Nenhuma disciplina encontrada.
-            </Text>
+          {filteredSubjects.length === 0 && (
+            <YStack items="center" py="$8">
+              <Text
+                color="#6B7280"
+                fontSize={16}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              >
+                {searchQuery
+                  ? "Nenhuma disciplina encontrada"
+                  : "A disciplina digitada não foi encontrada "}
+              </Text>
+            </YStack>
           )}
         </YStack>
       </ScrollView>
 
       {/* Modal */}
       <Sheet
-        modal
+        forceRemoveScrollEnabled
         open={open}
         onOpenChange={(val: any) => {
           setOpen(val);
           if (!val) resetForm();
         }}
-        snapPoints={[85]}
+        snapPoints={[90]}
+        animation="medium"
+        modal
       >
         <Sheet.Frame p="$4" background="#fff">
           <YStack gap="$3">
-            <Text
-              fontSize="$7"
-              fontWeight="700"
-              style={{ fontFamily: "Montserrat-Regular" }}
-            >
-              {editingSubjectId
-                ? "Editar Disciplina"
-                : "Cadastro de Disciplina"}
-            </Text>
-
-            <Input
-              placeholder="Nome"
-              value={name}
-              onChangeText={(v) => {
-                setName(v);
-                if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
-              }}
-              style={{ fontFamily: "Montserrat-Regular" }}
-            />
-            {errors.name ? (
+            <XStack justify="space-between" items="center">
               <Text
-                color="#b91c1c"
-                fontSize="$3"
+                fontSize={24}
+                fontWeight="bold"
                 style={{ fontFamily: "Montserrat-Regular" }}
+                color="#111827"
               >
-                {errors.name}
+                {editingSubjectId
+                  ? "Editar Disciplina"
+                  : "Cadastro de Disciplina"}
               </Text>
-            ) : null}
+              <Button
+                onPress={() => setOpen(false)}
+                bg="transparent"
+                p={0}
+                width={32}
+                height={32}
+                circular
+              >
+                <X size={24} color="#6B7280" />
+              </Button>
+            </XStack>
 
-            <Input
-              placeholder="Código"
-              value={code}
-              onChangeText={(v) => {
-                setCode(v);
-                if (errors.code) setErrors((prev) => ({ ...prev, code: "" }));
-              }}
-              style={{ fontFamily: "Montserrat-Regular" }}
-            />
-            {errors.code ? (
+            <YStack gap="$2">
               <Text
-                color="#b91c1c"
-                fontSize="$3"
+                fontSize={14}
+                fontWeight="600"
                 style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
               >
-                {errors.code}
+                Nome *
               </Text>
-            ) : null}
+              <Input
+                placeholder="Digite o nome da disciplina"
+                value={name}
+                onChangeText={(v) => {
+                  setName(v);
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                }}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              />
+              {errors.name ? (
+                <Text
+                  color="#b91c1c"
+                  fontSize="$3"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {errors.name}
+                </Text>
+              ) : null}
+            </YStack>
 
-            <Input
-              placeholder="Quantidade de notas"
-              keyboardType="numeric"
-              value={numberOfGrades}
-              onChangeText={(v) => {
-                setNumberOfGrades(v);
-                if (errors.numberOfGrades)
-                  setErrors((prev) => ({ ...prev, numberOfGrades: "" }));
-              }}
-              style={{ fontFamily: "Montserrat-Regular" }}
-            />
-            {errors.numberOfGrades ? (
+            <YStack gap="$2">
+              {" "}
               <Text
-                color="#b91c1c"
-                fontSize="$3"
+                fontSize={14}
+                fontWeight="600"
                 style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
               >
-                {errors.numberOfGrades}
+                Código *
               </Text>
-            ) : null}
+              <Input
+                placeholder="Digite o código da disciplina"
+                value={code}
+                onChangeText={(v) => {
+                  setCode(v);
+                  if (errors.code) setErrors((prev) => ({ ...prev, code: "" }));
+                }}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              />
+              {errors.code ? (
+                <Text
+                  color="#b91c1c"
+                  fontSize="$3"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {errors.code}
+                </Text>
+              ) : null}
+            </YStack>
 
-            <Input
-              placeholder="Média para passar"
-              keyboardType="numeric"
-              value={passingAverage}
-              onChangeText={(v) => {
-                setPassingAverage(v);
-                if (errors.passingAverage)
-                  setErrors((prev) => ({ ...prev, passingAverage: "" }));
-              }}
-              style={{ fontFamily: "Montserrat-Regular" }}
-            />
-            {errors.passingAverage ? (
+            <YStack gap="$2">
               <Text
-                color="#b91c1c"
-                fontSize="$3"
+                fontSize={14}
+                fontWeight="600"
                 style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
               >
-                {errors.passingAverage}
+                Quantidade de notas *
               </Text>
-            ) : null}
+              <Input
+                placeholder="Digite a quantidade de notas"
+                keyboardType="numeric"
+                value={numberOfGrades}
+                onChangeText={(v) => {
+                  setNumberOfGrades(v);
+                  if (errors.numberOfGrades)
+                    setErrors((prev) => ({ ...prev, numberOfGrades: "" }));
+                }}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              />
+              {errors.numberOfGrades ? (
+                <Text
+                  color="#b91c1c"
+                  fontSize="$3"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {errors.numberOfGrades}
+                </Text>
+              ) : null}
+            </YStack>
 
-            <Input
-              placeholder="Média de recuperação"
-              keyboardType="numeric"
-              value={recoveryAverage}
-              onChangeText={(v) => {
-                setRecoveryAverage(v);
-                if (errors.recoveryAverage)
-                  setErrors((prev) => ({ ...prev, recoveryAverage: "" }));
-              }}
-              style={{ fontFamily: "Montserrat-Regular" }}
-            />
-            {errors.recoveryAverage ? (
+            <YStack gap="$2">
               <Text
-                color="#b91c1c"
-                fontSize="$3"
+                fontSize={14}
+                fontWeight="600"
                 style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
               >
-                {errors.recoveryAverage}
+                Média para passar *
               </Text>
-            ) : null}
+              <Input
+                placeholder="Digite a média para passar"
+                keyboardType="numeric"
+                value={passingAverage}
+                onChangeText={(v) => {
+                  setPassingAverage(v);
+                  if (errors.passingAverage)
+                    setErrors((prev) => ({ ...prev, passingAverage: "" }));
+                }}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              />
+              {errors.passingAverage ? (
+                <Text
+                  color="#b91c1c"
+                  fontSize="$3"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {errors.passingAverage}
+                </Text>
+              ) : null}
+            </YStack>
+
+            <YStack gap="$2">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                style={{ fontFamily: "Montserrat-Regular" }}
+                color="#374151"
+              >
+                Média de recuperação *
+              </Text>
+              <Input
+                placeholder="Digite a média de recuperação"
+                keyboardType="numeric"
+                value={recoveryAverage}
+                onChangeText={(v) => {
+                  setRecoveryAverage(v);
+                  if (errors.recoveryAverage)
+                    setErrors((prev) => ({ ...prev, recoveryAverage: "" }));
+                }}
+                style={{ fontFamily: "Montserrat-Regular" }}
+              />
+              {errors.recoveryAverage ? (
+                <Text
+                  color="#b91c1c"
+                  fontSize="$3"
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {errors.recoveryAverage}
+                </Text>
+              ) : null}
+            </YStack>
 
             {/* Seleção de professor apenas para ADMIN (Dropdown) */}
             {isAdmin && (
-              <YStack gap="$2">
+              <YStack gap="$2" mt="$3">
                 <Text
                   fontWeight="700"
                   style={{ fontFamily: "Montserrat-Regular" }}
@@ -493,29 +656,41 @@ export default function DisciplinasScreen() {
               </YStack>
             )}
 
-            <XStack gap="$2" mt="$2">
+            <YStack gap="$3" mt="$2">
               <Button
-                flex={1}
-                theme="accent"
+                onPress={saveSubject}
+                bg="#0075BE"
+                rounded={12}
+                height={52}
+                fontSize={16}
+                fontWeight="600"
+                disabled={loading}
+                hoverStyle={{ bg: "#0e2b5a" }}
+              >
+                <Text color="#fff" style={{ fontFamily: "Montserrat-Regular" }}>
+                  {loading ? "Salvando..." : "Salvar"}
+                </Text>
+              </Button>
+
+              <Button
                 onPress={() => setOpen(false)}
+                bg="transparent"
+                borderWidth={1}
+                borderColor="#E5E7EB"
+                rounded={12}
+                height={52}
+                fontSize={16}
+                fontWeight="600"
                 disabled={loading}
               >
                 <Text
-                  fontWeight={"600"}
+                  color="#374151"
                   style={{ fontFamily: "Montserrat-Regular" }}
                 >
                   Cancelar
                 </Text>
               </Button>
-              <Button flex={1} onPress={saveSubject} disabled={loading}>
-                <Text
-                  fontWeight={"600"}
-                  style={{ fontFamily: "Montserrat-Regular" }}
-                >
-                  {loading ? "Salvando..." : "Salvar"}
-                </Text>
-              </Button>
-            </XStack>
+            </YStack>
           </YStack>
         </Sheet.Frame>
       </Sheet>
@@ -525,21 +700,37 @@ export default function DisciplinasScreen() {
         <View
           position="absolute"
           p="$4"
-          background="#fee2e2"
+          background={alertTitle === "Sucesso" ? "#d1fae5" : "#fee2e2"}
           borderWidth={1}
-          borderColor="#fca5a5"
+          borderColor={alertTitle === "Sucesso" ? "#10b981" : "#fca5a5"}
           pointerEvents="auto"
-          style={{ top: 40, left: 20, right: 20, borderRadius: 8, zIndex: 999999, elevation: 20 }}
+          style={{
+            top: 10,
+            left: 10,
+            right: 10,
+            borderRadius: 12,
+            zIndex: 999999,
+            elevation: 30,
+          }}
         >
-          <Text fontSize="$6" fontWeight="bold" color="#b91c1c">
+          <Text
+            fontSize="$6"
+            fontWeight="bold"
+            color={alertTitle === "Sucesso" ? "#047857" : "#b91c1c"}
+            style={{ fontFamily: "Montserrat-Regular" }}
+          >
             {alertTitle}
           </Text>
 
-          <Text mt="$2" color="#7f1d1d">
+          <Text
+            mt="$2"
+            color={alertTitle === "Sucesso" ? "#047857" : "#7f1d1d"}
+            style={{ fontFamily: "Montserrat-Regular" }}
+          >
             {alertMessage}
           </Text>
 
-          <XStack justify="flex-end" mt="$3">
+          <XStack justify="flex-end" mt="$4">
             {alertButtons.map((btn, index) => (
               <Button
                 key={index}
@@ -548,10 +739,15 @@ export default function DisciplinasScreen() {
                   setAlertVisible(false);
                 }}
                 ml="$2"
-                bg="#b91c1c"
-                color="white"
+                bg={index === 0 ? "black" : "#e11d1d"}
+                hoverStyle={{ bg: index === 0 ? "#333" : "#b91c1c" }}
               >
-                {btn.text}
+                <Text
+                  color={"#fff"}
+                  style={{ fontFamily: "Montserrat-Regular" }}
+                >
+                  {btn.text}
+                </Text>
               </Button>
             ))}
           </XStack>

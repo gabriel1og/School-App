@@ -131,7 +131,7 @@ export default function AlunosScreen() {
   };
 
   return (
-    <View flex={1}>
+    <View flex={1} background="white" p="$4">
       <YStack p="$4" bg="#003866" rounded={15}>
         <XStack justify="space-between" items="center" mb="$6">
           <YStack>
@@ -148,7 +148,10 @@ export default function AlunosScreen() {
               style={{ fontFamily: "Montserrat-Regular" }}
               color="rgba(255,255,255,0.8)"
             >
-              {students.length} alunos cadastrados
+              {students.length}{" "}
+              {students.length === 1
+                ? "aluno cadastrado"
+                : "alunos cadastrados"}
             </Text>
           </YStack>
           <Button
@@ -199,14 +202,13 @@ export default function AlunosScreen() {
           {filteredStudents.map((student) => (
             <YStack
               key={student.id}
-              bg="white"
-              rounded={16}
+              bg="#fff"
               p="$4"
+              rounded={16}
               shadowColor="#000"
               shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
+              shadowOpacity={0.05}
               shadowRadius={8}
-              elevation={3}
               borderWidth={1}
               borderColor="#F3F4F6"
             >

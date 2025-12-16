@@ -5,23 +5,23 @@ import { CreateGradeData, Grade } from "@/src/types/grade.types";
 import { Student } from "@/src/types/student.types";
 import { Subject } from "@/src/types/subject.types";
 import {
-    BookOpen,
-    GraduationCap,
-    Plus,
-    Search,
-    X
+  BookOpen,
+  GraduationCap,
+  Plus,
+  Search,
+  X,
 } from "@tamagui/lucide-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
-    Button,
-    Input,
-    ScrollView,
-    Sheet,
-    Spinner,
-    Text,
-    View,
-    XStack,
-    YStack,
+  Button,
+  Input,
+  ScrollView,
+  Sheet,
+  Spinner,
+  Text,
+  View,
+  XStack,
+  YStack,
 } from "tamagui";
 
 type FilterType = "all" | "student" | "subject";
@@ -320,7 +320,7 @@ export default function NotasScreen() {
   const groupedGrades = groupGradesByStudent();
 
   return (
-    <View flex={1}>
+    <View flex={1} background="white" p="$4">
       <YStack p="$4" bg="#003866" rounded={15}>
         <XStack justify="space-between" items="center" mb="$6">
           <YStack>
@@ -721,10 +721,7 @@ export default function NotasScreen() {
                   >
                     Aluno *
                   </Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                  >
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <XStack gap="$2">
                       {students.map((student) => (
                         <Button
@@ -767,10 +764,7 @@ export default function NotasScreen() {
                   >
                     Disciplina *
                   </Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                  >
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <XStack gap="$2">
                       {subjects.map((subject) => (
                         <Button
@@ -1031,7 +1025,7 @@ export default function NotasScreen() {
                       onPress={() => handleRemoveScoreFromList(index)}
                       bg="#FEE2E2"
                       rounded={10}
-                      width={44}
+                      width={48}
                       height={44}
                     >
                       <X size={20} color="#EF4444" />
@@ -1044,6 +1038,7 @@ export default function NotasScreen() {
                   bg="#10B981"
                   rounded={12}
                   height={44}
+                  hoverStyle={{ bg: "#0c8a60" }}
                   icon={<Plus size={18} color="white" />}
                 >
                   <Text
@@ -1101,10 +1096,10 @@ export default function NotasScreen() {
       {showAlert && (
         <View
           position="absolute"
-          top={60}
-          left={0}
-          right={0}
-          zIndex={9999}
+          t={60}
+          l={0}
+          r={0}
+          z={9999}
           px="$4"
           animation="quick"
           enterStyle={{ opacity: 0, y: -20 }}
