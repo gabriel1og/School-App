@@ -19,6 +19,14 @@ interface QuickActionItem {
 
 const quickActions: QuickActionItem[] = [
   {
+    id: "teachers",
+    label: "Professores",
+    icon: GraduationCap,
+    iconColor: "white",
+    bgColor: "#8B5CF6",
+    route: "/(app)/(tabs)/professores",
+  },
+  {
     id: "students",
     label: "Alunos",
     icon: Users,
@@ -33,14 +41,6 @@ const quickActions: QuickActionItem[] = [
     iconColor: "white",
     bgColor: "#10B981",
     route: "/(app)/(tabs)/disciplinas",
-  },
-  {
-    id: "teachers",
-    label: "Professores",
-    icon: GraduationCap,
-    iconColor: "white",
-    bgColor: "#8B5CF6",
-    route: "/(app)/(tabs)/professores",
   },
   {
     id: "grades",
@@ -62,7 +62,7 @@ export default function HomeScreen() {
 
   return (
     <View flex={1} background="white" p="$4">
-      <XStack justify="space-between" items="center" mb="$4">
+      <YStack justify="space-between" items="center" mb="$6">
         <Heading
           size="$6"
           fontWeight="700"
@@ -70,9 +70,13 @@ export default function HomeScreen() {
         >
           Home
         </Heading>
-      </XStack>
 
-      <XStack flexWrap="wrap" gap="$3" justify="space-between">
+        <Text color="#6B7280" style={{ fontFamily: "Montserrat-Regular" }}>
+          Navegue entre as páginas abaixo
+        </Text>
+      </YStack>
+
+      <XStack flexWrap="wrap" gap="$4" justify="space-between">
         {(user?.user_type === "admin"
           ? quickActions
           : quickActions.filter((a) => a.id !== "teachers")
@@ -81,7 +85,7 @@ export default function HomeScreen() {
           return (
             <YStack
               key={action.id}
-              width="48%"
+              width="100%"
               background="white"
               p="$4"
               items="center"
@@ -93,13 +97,14 @@ export default function HomeScreen() {
               shadowOffset={{ width: 0, height: 2 }}
               shadowOpacity={0.05}
               shadowRadius={8}
-              elevation={2}
               borderWidth={1}
               borderColor="#F3F4F6"
               hoverStyle={{
                 shadowOpacity: 0.1,
                 shadowRadius: 12,
                 transform: [{ scale: 0.98 }],
+                bg: action.bgColor + "20",
+                borderColor: action.bgColor + "40",
               }}
               pressStyle={{
                 transform: [{ scale: 0.95 }],
@@ -110,15 +115,15 @@ export default function HomeScreen() {
             >
               <View
                 background={action.bgColor}
-                width={64}
-                height={64}
+                width={52}
+                height={52}
                 items="center"
                 justify="center"
                 style={{
                   borderRadius: 16,
                 }}
               >
-                <Icon size={32} color={action.iconColor} />
+                <Icon size={28} color={action.iconColor} />
               </View>
               <Text
                 fontSize="$5"
