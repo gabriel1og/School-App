@@ -47,7 +47,7 @@ O aplicativo simula um sistema de gerenciamento escolar, envolvendo funcionalida
   
 ## 📱 Demonstração em Vídeo
  Assista ao vídeo de apresentação do app pelo link abaixo:
- [Link para o vídeo no YouTube](https://youtube.com/seu-video-aqui)
+ [Link para o vídeo no Vimeo](https://vimeo.com/1148184929?share=copy&fl=sv&fe=ci)
 
 ## 📱 Repositório
 Este repositório contém todo o código-fonte do projeto, bem como os recursos
