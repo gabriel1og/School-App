@@ -59,4 +59,4 @@ visuais utilizados e instruções para execução local.
 
 **Professor:** Fernando Pereira
 
-**Entrega Individual - Trabalho Prático: App Mobile - School App - Sistema de Gerenciamento Escolar 🎓
+**Entrega Individual** - Trabalho Prático: App Mobile - School App - Sistema de Gerenciamento Escolar 🎓
